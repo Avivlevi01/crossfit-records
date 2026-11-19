@@ -288,6 +288,94 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
 #toast.show { opacity: 1; transform: none; }
 dialog[open] ~ #toast { bottom: 24px; }
 
+/* ---------- PR badge and per-exercise summary ---------- */
+
+.entry-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pr-badge {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px 2px 7px; border-radius: 999px;
+  background: linear-gradient(135deg, #ffd54a, var(--accent-2)); color: #1a0a04;
+  font: 800 0.78rem var(--display); letter-spacing: 0.06em;
+}
+.pr-badge .icon { width: 1em; height: 1em; }
+.entry-meta .est { color: var(--accent-2); font-weight: 700; }
+
+.group-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 0 14px 10px; font-size: 0.85rem; }
+.sum { display: inline-flex; align-items: center; gap: 6px; }
+.sum b { color: var(--muted); font-weight: 700; }
+.sum span { font-weight: 700; }
+.sum.pr .icon { color: #ffd54a; }
+.sum.pr span { color: #ffd54a; }
+.chart-btn { margin-inline-start: auto; }
+
+/* ---------- progress chart ---------- */
+
+.chart-panel { padding: 0 14px 12px; }
+.chart { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.seg-group.compact { max-width: 320px; margin: 0; }
+.seg-group.compact .seg { min-height: 34px; font-size: 0.85rem; }
+.chart-svg { width: 100%; min-height: 210px; }
+.chart-canvas { display: block; max-width: 100%; }
+.chart-grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.chart-tick { fill: var(--muted); font: 11px var(--body); }
+.chart-area { fill: rgba(255, 77, 46, 0.1); stroke: none; }
+.chart-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.chart-dot { fill: var(--panel); stroke: var(--accent); stroke-width: 2; cursor: pointer; outline: none; }
+.chart-dot.pr { fill: #ffd54a; stroke: var(--accent-2); }
+.chart-dot.now { stroke: #fff; stroke-width: 2.5; filter: drop-shadow(0 0 6px rgba(255, 213, 74, 0.85)); }
+.chart-dot.sel, .chart-dot:focus-visible { stroke: #fff; stroke-width: 3; }
+.chart-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 0.85rem; font-weight: 700; }
+.legend { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-weight: 400; }
+.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ffd54a; }
+
+/* ---------- PR celebration (full-screen, only when a record is broken) ---------- */
+
+.pr-overlay {
+  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; overflow: hidden; cursor: pointer;
+  background: radial-gradient(circle at 50% 42%, rgba(255, 120, 40, 0.55), rgba(11, 10, 13, 0.95) 62%);
+  animation: fade 0.25s ease backwards;
+}
+.pr-stage { position: relative; display: grid; justify-items: center; width: min(100%, 420px); animation: shake 0.55s 0.66s ease-in-out backwards; }
+.pr-bar { width: min(90%, 340px); height: auto; filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.6)); animation: drop 0.75s cubic-bezier(0.22, 0.9, 0.3, 1.15) backwards; }
+.bar-shaft { fill: #b9b5c2; }
+.collar { fill: #e8e4ee; }
+.plate.p1 { fill: var(--accent); }
+.plate.p2 { fill: #f3efe9; }
+.plate.p3 { fill: #2a2631; stroke: #f3efe9; stroke-width: 1.5; }
+.pr-card { display: grid; gap: 10px; justify-items: center; text-align: center; padding: 14px 8px; animation: slam 0.5s 0.62s cubic-bezier(0.2, 1.4, 0.4, 1) backwards; }
+.pr-kicker { font-size: clamp(2.4rem, 11vw, 3.6rem); color: #ffd54a; text-shadow: 0 0 28px rgba(255, 154, 46, 0.85), 0 3px 0 #b23a14; }
+.pr-exercise { font-size: 1.5rem; }
+.pr-value { font-size: clamp(2rem, 10vw, 3rem); }
+.pr-delta { font-size: 1.2rem; font-weight: 800; color: #7dffb0; }
+.pr-prev { font-size: 0.9rem; color: var(--muted); }
+.pr-card .btn { margin-top: 8px; }
+.pr-burst { position: absolute; left: 50%; top: 44%; width: 0; height: 0; pointer-events: none; }
+.spark { position: absolute; left: 0; top: 0; width: 9px; height: 14px; margin: -7px 0 0 -4px; border-radius: 2px; animation: burst 1.15s cubic-bezier(0.1, 0.7, 0.3, 1) both; }
+.spark.c0 { background: #ffd54a; }
+.spark.c1 { background: var(--accent); }
+.spark.c2 { background: #fff; }
+.pr-ring { position: absolute; left: 0; top: 0; width: 40px; height: 40px; margin: -20px 0 0 -20px; border: 4px solid #ffd54a; border-radius: 50%; animation: ring 0.9s 0.62s ease-out both; }
+.pr-ring.r2 { border-color: var(--accent); animation-delay: 0.78s; }
+
+@keyframes fade { from { opacity: 0; } }
+@keyframes drop { from { transform: translateY(-110vh) rotate(-8deg); } }
+@keyframes slam { from { opacity: 0; transform: scale(2.6); } }
+@keyframes shake {
+  0%, 100% { transform: none; }
+  20% { transform: translate(-7px, 5px); }
+  40% { transform: translate(6px, -4px); }
+  60% { transform: translate(-4px, 3px); }
+  80% { transform: translate(3px, -2px); }
+}
+@keyframes burst {
+  from { transform: translate(0, 0) rotate(0) scale(1.2); opacity: 1; }
+  to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.4); opacity: 0; }
+}
+@keyframes ring { from { transform: scale(0.2); opacity: 1; } to { transform: scale(9); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spark, .pr-ring { display: none; } /* particles only make sense when animated */
+}
+
 /* ---------- motion (kept subtle; reduced-motion users get none) ---------- */
 
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } }

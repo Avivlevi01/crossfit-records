@@ -1,7 +1,7 @@
 """Shapes of the JSON the API accepts and returns (validated automatically by FastAPI)."""
 
 from datetime import date, datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
@@ -59,6 +59,22 @@ class RecordIn(BaseModel):
     note: str | None = Field(None, max_length=500)
 
 
+class ValueSet(BaseModel):
+    """The measured values of a record (used to describe the previous PR)."""
+
+    weight_kg: float | None
+    reps: int | None
+    time_seconds: float | None
+    distance_m: int | None
+
+
+class Celebration(BaseModel):
+    """Sent only right after saving a record that is worth celebrating."""
+
+    type: Literal["new", "first"]  # "new" = broke the PR, "first" = first record for the exercise
+    previous: ValueSet | None  # the PR that was beaten ("new" only)
+
+
 class RecordOut(BaseModel):
     id: int
     user_id: int
@@ -71,6 +87,10 @@ class RecordOut(BaseModel):
     performed_on: date
     note: str | None
     comment_count: int
+    est_1rm: float | None  # estimated one-rep max (weight x reps exercises, up to 12 reps)
+    is_pr: bool  # beat everything logged before it
+    is_current_pr: bool  # holds the PR right now
+    celebration: Celebration | None = None
 
 
 class CommentIn(BaseModel):

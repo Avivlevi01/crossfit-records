@@ -3,6 +3,10 @@
 // (via h() / textContent), never as HTML, so nobody can inject scripts.
 
 import { t, getLang, setLang, applyDocLang, categoryName, entriesText } from './i18n.js';
+import { h, icon, appendKids } from './dom.js';
+import { fmtNum, fmtTime, parseTime, fmtDate, fmtDateTime, unit, valueText } from './format.js';
+import { progressChart } from './chart.js';
+import { celebratePR } from './celebrate.js';
 
 const $ = (sel) => document.querySelector(sel);
 const CATEGORY_ORDER = ['Strength', 'Olympic lifts', 'Gymnastics', 'Benchmark WODs', 'Endurance', 'Hyrox', 'Custom'];
@@ -12,49 +16,6 @@ let me = null; // the logged-in user {id, username}
 let exercises = []; // all exercises (default + custom)
 let mineFilter = ''; // selected exercise filter on "my records"
 let renderToken = 0; // lets slow requests notice the user already navigated away
-
-// ---------- tiny DOM helpers ----------
-
-const SVG_NS = 'http://www.w3.org/2000/svg';
-const ICONS = {
-  edit: '<path d="M4 20h4L18.5 9.5l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
-  trash: '<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6"/>',
-  comment: '<path d="M4 5h16v11H9l-5 4V5z"/>',
-  plus: '<path d="M12 5v14M5 12h14"/>',
-  back: '<path d="M15 5l-7 7 7 7"/>',
-  close: '<path d="M6 6l12 12M18 6L6 18"/>',
-};
-
-function icon(name) {
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('class', `icon icon-${name}`);
-  svg.setAttribute('aria-hidden', 'true');
-  svg.innerHTML = ICONS[name]; // fixed trusted strings above, never user data
-  return svg;
-}
-
-function appendKids(el, kids) {
-  for (const k of kids.flat(Infinity)) {
-    if (k == null || k === false) continue;
-    el.append(k instanceof Node ? k : document.createTextNode(String(k)));
-  }
-}
-
-function h(tag, props, ...kids) {
-  const el = document.createElement(tag);
-  let value;
-  for (const [k, v] of Object.entries(props || {})) {
-    if (v == null || v === false) continue;
-    if (k === 'class') el.className = v;
-    else if (k === 'value') value = v;
-    else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
-    else el.setAttribute(k, v === true ? '' : v);
-  }
-  appendKids(el, kids);
-  if (value !== undefined) el.value = value; // after children, so <select> options exist
-  return el;
-}
 
 function setContent(...nodes) {
   const app = $('#app');
@@ -131,68 +92,6 @@ function sessionLost() {
   me = null;
   route();
   toast(t('err_session'));
-}
-
-// ---------- formatting ----------
-
-const fmtNum = (n) => (Number.isInteger(n) ? String(n) : String(+n.toFixed(2)));
-
-function fmtTime(seconds) {
-  const total = Math.round(seconds * 100) / 100;
-  const hrs = Math.floor(total / 3600);
-  const mins = Math.floor((total % 3600) / 60);
-  const secs = total % 60;
-  const secStr = Number.isInteger(secs) ? String(secs).padStart(2, '0') : secs.toFixed(2).padStart(5, '0');
-  return hrs ? `${hrs}:${String(mins).padStart(2, '0')}:${secStr}` : `${mins}:${secStr}`;
-}
-
-/** "4:35" -> 275, "1:02:03" -> 3723, "95" -> 95. Returns NaN if it isn't a time. */
-function parseTime(text) {
-  const parts = text.trim().replace(',', '.').split(':');
-  if (!text.trim() || parts.length > 3) return NaN;
-  let total = 0;
-  for (const p of parts) {
-    if (!/^\d+(\.\d+)?$/.test(p)) return NaN;
-    total = total * 60 + parseFloat(p);
-  }
-  return total;
-}
-
-function fmtDate(iso) {
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString(getLang() === 'he' ? 'he-IL' : 'en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function fmtDateTime(iso) {
-  return new Date(iso).toLocaleString(getLang() === 'he' ? 'he-IL' : 'en-GB', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-// Wraps a (possibly Hebrew) unit word in an invisible "isolate" so it can't reorder the
-// numbers around it when a left-to-right line like "102.5 kg × 3" is shown on a Hebrew page.
-const unit = (s) => `⁦${s}⁩`;
-
-function valueText(rec) {
-  switch (rec.exercise.kind) {
-    case 'weight_reps':
-      return `${fmtNum(rec.weight_kg)} ${unit(t('kg'))} × ${rec.reps}`;
-    case 'reps_only':
-      return `${rec.reps} ${unit(t('reps_word'))}`;
-    case 'time':
-      return fmtTime(rec.time_seconds);
-    case 'distance_time':
-      return `${fmtNum(rec.distance_m)} ${unit(t('meters'))} · ${fmtTime(rec.time_seconds)}`;
-    default:
-      return '';
-  }
 }
 
 const todayISO = () => new Date().toLocaleDateString('sv-SE'); // yyyy-mm-dd in local time
@@ -338,16 +237,36 @@ function groupByExercise(records) {
 
 function recordGroups(records, { editable, onChange }) {
   let n = 0;
-  return groupByExercise(records).map((g) =>
-    h('section', { class: 'group' },
+  return groupByExercise(records).map((g) => {
+    const best = g.items.find((r) => r.is_current_pr);
+    const best1rm = Math.max(0, ...g.items.map((r) => r.est_1rm ?? 0));
+    const chartPanel = h('div', { class: 'chart-panel', hidden: true });
+    const chartBtn = h('button', {
+      type: 'button', class: 'link-btn chart-btn', 'aria-expanded': 'false',
+      onclick: () => {
+        const open = chartPanel.hidden;
+        if (open && !chartPanel.firstChild) chartPanel.append(progressChart(g.items, g.exercise.kind));
+        chartPanel.hidden = !open;
+        chartBtn.setAttribute('aria-expanded', String(open));
+        if (open) chartPanel.firstChild.redraw(); // draw now that the panel has a width
+      },
+    }, icon('chart'), t('chart'));
+
+    return h('section', { class: 'group' },
       h('header', { class: 'group-head' },
         h('h3', { class: 'display' }, g.exercise.name),
         h('span', { class: 'tag' }, categoryName(g.exercise.category)),
         h('span', { class: 'count' }, entriesText(g.items.length)),
       ),
+      h('div', { class: 'group-summary' },
+        best ? h('span', { class: 'sum pr' }, icon('trophy'), h('b', {}, t('pr_current')), h('span', { dir: 'ltr' }, valueText(best))) : null,
+        best1rm ? h('span', { class: 'sum' }, h('b', {}, t('est_1rm')), h('span', { dir: 'ltr' }, `≈ ${fmtNum(best1rm)} ${unit(t('kg'))}`)) : null,
+        g.items.length > 1 ? chartBtn : null,
+      ),
+      chartPanel,
       h('ul', { class: 'entries' }, g.items.map((r) => entryRow(r, { editable, onChange, index: n++ }))),
-    ),
-  );
+    );
+  });
 }
 
 function entryRow(rec, { editable, onChange, index }) {
@@ -388,9 +307,13 @@ function entryRow(rec, { editable, onChange, index }) {
 
   const li = h('li', { class: 'entry' },
     h('div', { class: 'entry-main' },
-      h('div', { class: 'entry-value', dir: 'ltr' }, valueText(rec)),
+      h('div', { class: 'entry-top' },
+        h('div', { class: 'entry-value', dir: 'ltr' }, valueText(rec)),
+        rec.is_current_pr ? h('span', { class: 'pr-badge' }, icon('trophy'), t('pr')) : null,
+      ),
       h('div', { class: 'entry-meta' },
         h('span', {}, fmtDate(rec.performed_on)),
+        rec.est_1rm ? h('span', { class: 'est', dir: 'ltr' }, `1RM≈${fmtNum(rec.est_1rm)}`) : null,
         rec.note ? h('span', { class: 'note' }, rec.note) : null,
       ),
     ),
@@ -701,10 +624,12 @@ function openRecordDialog(rec, onSaved) {
       }
       save.disabled = true;
       try {
-        await api(rec ? `/api/records/${rec.id}` : '/api/records', { method: rec ? 'PUT' : 'POST', body });
+        const saved = await api(rec ? `/api/records/${rec.id}` : '/api/records', { method: rec ? 'PUT' : 'POST', body });
         dlg.close();
-        toast(t('saved'));
         onSaved();
+        if (saved.celebration?.type === 'new') celebratePR(saved); // broke a PR: the big show
+        else if (saved.celebration?.type === 'first') toast(t('pr_first')); // first record: baseline
+        else toast(t('saved'));
       } catch (ex) {
         err.textContent = errorText(ex);
       }

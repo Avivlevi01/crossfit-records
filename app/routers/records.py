@@ -3,22 +3,26 @@
 The rule everywhere: any logged-in user may READ; only the owner may CHANGE his own records.
 """
 
-from datetime import date, datetime, timedelta, timezone
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func, select, tuple_
 from sqlalchemy.orm import Session, joinedload
 
+from app import pr
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import Comment, Exercise, ExerciseKind, Record, User
 from app.schemas import (
+    Celebration,
     CommentIn,
     CommentOut,
     ExerciseOut,
     RecordIn,
     RecordOut,
     UserListItem,
+    ValueSet,
 )
 
 router = APIRouter(prefix="/api", tags=["records"])
@@ -48,7 +52,33 @@ def _validate_for_exercise(data: RecordIn, exercise: Exercise) -> None:
         raise HTTPException(422, "Date can't be in the future")
 
 
-def _serialize(db: Session, records: list[Record]) -> list[RecordOut]:
+def _value_set(r: Record) -> ValueSet:
+    return ValueSet(
+        weight_kg=float(r.weight_kg) if r.weight_kg is not None else None,
+        reps=r.reps,
+        time_seconds=float(r.time_seconds) if r.time_seconds is not None else None,
+        distance_m=r.distance_m,
+    )
+
+
+def _histories(db: Session, records: list[Record]) -> dict[tuple[int, int], list[Record]]:
+    """Full history (all records) of every (user, exercise) pair among `records`.
+
+    PR flags depend on the whole history, so we always look at all of it, even
+    when the caller only asked for one record.
+    """
+    pairs = {(r.user_id, r.exercise_id) for r in records}
+    groups: dict[tuple[int, int], list[Record]] = defaultdict(list)
+    if pairs:
+        rows = db.scalars(select(Record).where(tuple_(Record.user_id, Record.exercise_id).in_(pairs)))
+        for row in rows:
+            groups[(row.user_id, row.exercise_id)].append(row)
+    return groups
+
+
+def _serialize(db: Session, records: list[Record], saved_id: int | None = None) -> list[RecordOut]:
+    """Turns records into API output. Pass `saved_id` right after create/update to
+    include the celebration info for that record."""
     ids = [r.id for r in records]
     counts = {}
     if ids:
@@ -59,22 +89,36 @@ def _serialize(db: Session, records: list[Record]) -> list[RecordOut]:
                 .group_by(Comment.record_id)
             ).all()
         )
-    return [
-        RecordOut(
-            id=r.id,
-            user_id=r.user_id,
-            username=r.user.username,
-            exercise=ExerciseOut.model_validate(r.exercise),
-            weight_kg=float(r.weight_kg) if r.weight_kg is not None else None,
-            reps=r.reps,
-            time_seconds=float(r.time_seconds) if r.time_seconds is not None else None,
-            distance_m=r.distance_m,
-            performed_on=r.performed_on,
-            note=r.note,
-            comment_count=counts.get(r.id, 0),
+    histories = _histories(db, records)
+    kinds = {(r.user_id, r.exercise_id): r.exercise.kind for r in records}
+    flags = {key: pr.history_flags(kind, histories[key]) for key, kind in kinds.items()}
+    out = []
+    for r in records:
+        key = (r.user_id, r.exercise_id)
+        is_pr, is_current = flags[key][r.id]
+        celebration = None
+        if saved_id == r.id:
+            result = pr.celebration_for(r.exercise.kind, histories[key], r.id)
+            if result:
+                kind, previous = result
+                celebration = Celebration(type=kind, previous=_value_set(previous) if previous else None)
+        out.append(
+            RecordOut(
+                id=r.id,
+                user_id=r.user_id,
+                username=r.user.username,
+                exercise=ExerciseOut.model_validate(r.exercise),
+                **_value_set(r).model_dump(),
+                performed_on=r.performed_on,
+                note=r.note,
+                comment_count=counts.get(r.id, 0),
+                est_1rm=pr.est_1rm(r.weight_kg, r.reps) if r.exercise.kind == ExerciseKind.WEIGHT_REPS.value else None,
+                is_pr=is_pr,
+                is_current_pr=is_current,
+                celebration=celebration,
+            )
         )
-        for r in records
-    ]
+    return out
 
 
 def _load_record(db: Session, record_id: int) -> Record:
@@ -151,7 +195,7 @@ def create_record(
     _apply(record, data)
     db.add(record)
     db.commit()
-    return _serialize(db, [_load_record(db, record.id)])[0]
+    return _serialize(db, [_load_record(db, record.id)], saved_id=record.id)[0]
 
 
 @router.put("/records/{record_id}", response_model=RecordOut)
@@ -170,7 +214,7 @@ def update_record(
     _validate_for_exercise(data, exercise)
     _apply(record, data)
     db.commit()
-    return _serialize(db, [_load_record(db, record_id)])[0]
+    return _serialize(db, [_load_record(db, record_id)], saved_id=record_id)[0]
 
 
 @router.delete("/records/{record_id}", status_code=204)
