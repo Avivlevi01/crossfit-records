@@ -69,6 +69,10 @@ class Exercise(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+# Exercise names are unique ignoring case (defaults and custom ones share one namespace).
+Index("ix_exercises_name_lower", func.lower(Exercise.name), unique=True)
+
+
 class Record(Base):
     __tablename__ = "records"
     __table_args__ = (

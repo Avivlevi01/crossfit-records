@@ -16,8 +16,18 @@ Owner: Aviv (junior developer, writes Hebrew; reply in Hebrew, explain in simple
 
 ## Plan (stages)
 
-1 Infrastructure (done when Compose + health work) -> 2 MVP (auth, exercises, records CRUD, view others, comments, basic UI + logo) -> 3 PR/1RM/chart/celebration -> 4 leaderboard -> 5 WOD + run types -> 6 timer -> 7 deploy + backups -> 8 polish.
+1 Infrastructure (DONE) -> 2 MVP: auth, exercises, records CRUD, view others, comments, basic UI + logo (DONE 2026-11-19) -> 3 PR/1RM/chart/celebration -> 4 leaderboard -> 5 polish WOD/run display (forms already handle all 4 kinds) -> 6 timer -> 7 deploy + backups -> 8 polish.
 Wait for the owner's go-ahead between stages.
+
+## Decisions made while building stage 2
+
+- Custom exercises are shared with everyone (needed for leaderboards). Names are unique ignoring case across defaults + custom. Creator may delete a custom exercise only while it has no records. Defaults can't be deleted.
+- Default list tweaks vs. the original proposal: Cindy replaced by Karen (Cindy is an AMRAP, not "for time"); fixed-distance runs/rows are kind `time`; one generic "Run (any distance)" uses `distance_time`; Hyrox Sled Pull added.
+- Login = JWT in httpOnly SameSite=Lax cookie; token embeds a fingerprint of the password hash, so changing a password (`python -m app.admin set-password <user>`) logs out old sessions. Failed-login/invite limits are in-memory (app/ratelimit.py): in production behind a proxy, run uvicorn with `--proxy-headers` so the real client IP is used.
+- CSP is `default-src 'self'`: no inline scripts/styles and no external fonts/CDNs. Keep JS/CSS in files; set dynamic styles via `el.style`. /docs is exempt (loads Swagger from a CDN); consider disabling /docs in production.
+- Front-end builds DOM with `h()` (text only, never innerHTML with user data). Mixed Hebrew/number lines (e.g. "102.5 kg x 3") wrap the unit in a Unicode isolate (`unit()` in app.js), otherwise the order scrambles in RTL.
+- Impact font has one weight: `font-synthesis-weight: none` on html avoids blobby fake bold.
+- Tests: `docker compose run --rm app pytest -q` (25 tests, use a throw-away `crossfit_test` DB). Run after backend changes.
 
 ## Conventions
 
