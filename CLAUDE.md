@@ -16,7 +16,7 @@ Owner: Aviv (junior developer, writes Hebrew; reply in Hebrew, explain in simple
 
 ## Plan (stages)
 
-1 Infrastructure (DONE) -> 2 MVP: auth, exercises, records CRUD, view others, comments, basic UI + logo (DONE 2026-11-19) -> 3 PR/1RM/chart/celebration (DONE 2026-11-19) -> 4 leaderboard (DONE 2026-11-19) -> 5 WOD/run polish (DONE 2026-11-19) -> 6 timer (DONE 2026-11-19) -> 7 deploy + backups -> 8 polish.
+1 Infrastructure (DONE) -> 2 MVP: auth, exercises, records CRUD, view others, comments, basic UI + logo (DONE 2026-11-19) -> 3 PR/1RM/chart/celebration (DONE 2026-11-19) -> 4 leaderboard (DONE 2026-11-19) -> 5 WOD/run polish (DONE 2026-11-19) -> 6 timer (DONE 2026-11-19) -> 7 deploy + backups (PREPARED, awaiting owner's hosting decision) -> 8 polish.
 Wait for the owner's go-ahead between stages.
 
 ## Decisions made while building stage 2
@@ -31,7 +31,16 @@ Wait for the owner's go-ahead between stages.
 - Timer (stage 6, owner's choices): stopwatch / AMRAP / EMOM / Tabata on tab `#/timer`; beeps + vibration with one mute button (mute silences both; remembered); separate tool, does NOT create records; defaults Tabata 20/10 x 8, EMOM 10 min, AMRAP 12 min, get-ready countdown 10 s (0/5/10/15/30). Code: timer-core.js (pure logic: phases, locate(), cueFor(); unit-tested), timer-audio.js (WebAudio beeps, vibrate, Wake Lock), timer.js (engine + screen). The running timer lives in the module, so it keeps running/beeping when you open other tabs (red dot on the Timer tab); it is stopped on logout. Time comes from performance.now() deltas, not interval counting, so it doesn't drift. Browsers only allow sound after a tap: audio is unlocked inside the Start click. Background tabs may throttle the 100 ms interval to ~1 s, so a beep can be up to a second late when the screen is off (Wake Lock keeps the screen on while running where supported).
 - JS tests (Node 22, no dependencies): `node --test "tests/js/*.test.mjs"` (timer logic). Python tests don't cover JS.
 - NOT built (ask the owner if wanted): Rx vs Scaled for WODs. Right now scaled and Rx times are compared directly; people can note "scaled" in the note field.
-- Tests: `docker compose run --rm app pytest -q` (51 tests, use a throw-away `crossfit_test` DB). Run after backend changes. Test dates must not be in the future (the API rejects dates > tomorrow).
+- Tests: `docker compose run --rm app pytest -q` (55 tests, use a throw-away `crossfit_test` DB). Run after backend changes. Test dates must not be in the future (the API rejects dates > tomorrow).
+
+## Stage 7: deployment (prepared 2026-11-19; NOT yet deployed, hosting not chosen)
+
+- Ready and tested locally: multi-stage Dockerfile (`dev` for compose, `prod` = non-root uid 10001, no test tools, healthcheck, `--proxy-headers --no-server-header`), `docker-compose.prod.yml` (project `crossfit-prod`; only Caddy publishes ports; `APP_ENV_FILE`/`HTTP_PORT`/`HTTPS_PORT` overridable for local tests), `Caddyfile` (auto HTTPS, `{$DOMAIN}`), `.env.production.example`, `scripts/backup.sh` + `restore.sh` (restore verified: wiped data, restored, login worked), `DEPLOY.md` (Hebrew guide).
+- Production safety in code: `COOKIE_SECURE=true` adds HSTS and refuses to start if the settings still contain "change-me" (config.py); `ENABLE_DOCS` (default false) controls /docs and /openapi.json (dev `.env` sets it true); rate limit sees the real IP via Caddy and can't be dodged with a forged X-Forwarded-For (verified).
+- Recommended plan (owner has not decided): small Hetzner VPS (~4-5 EUR/mo, verify price) + Docker Compose + a domain (free DuckDNS or ~10 EUR/yr). Needs from the owner before deploying: provider/account, domain choice, private GitHub repo (or manual copy), final INVITE_CODE. Spending money / creating accounts / creating the GitHub repo all need explicit approval.
+- Offsite backups are the owner's job (cron + copy `backups/` elsewhere): documented in DEPLOY.md.
+- Windows tip: `bash` is not on PowerShell's PATH; run the scripts via Git Bash (the Bash tool).
+- LAN access from a phone: use the Wi-Fi adapter's IPv4 (`ipconfig`; 192.168.56.1 is a VirtualBox virtual adapter and won't work from a phone), and Windows Firewall (Public network profile) must allow inbound TCP 8000 (owner runs an admin PowerShell `New-NetFirewallRule`; Claude must not change firewall settings).
 
 ## PR rules (stage 3; all in app/pr.py, the single source of truth, reuse it for the leaderboard)
 

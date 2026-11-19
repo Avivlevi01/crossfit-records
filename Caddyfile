@@ -1,0 +1,6 @@
+# Caddy = the front door. It gets and renews the HTTPS certificate by itself (Let's Encrypt),
+# redirects http -> https, compresses responses and forwards requests to the app.
+{$DOMAIN} {
+	encode gzip zstd
+	reverse_proxy app:8000
+}

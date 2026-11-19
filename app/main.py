@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import SessionLocal, get_db
 from app.routers import auth, exercises, leaderboard, records
 from app.seed import seed_default_exercises
@@ -17,7 +18,14 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="CrossFit Records", lifespan=lifespan)
+app = FastAPI(
+    title="CrossFit Records",
+    lifespan=lifespan,
+    # The docs page advertises every endpoint: handy while developing, pointless to expose publicly.
+    docs_url="/docs" if settings.enable_docs else None,
+    redoc_url=None,
+    openapi_url="/openapi.json" if settings.enable_docs else None,
+)
 
 app.include_router(auth.router)
 app.include_router(exercises.router)
@@ -44,6 +52,8 @@ async def security_headers(request: Request, call_next):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'"
         )
+    if settings.cookie_secure:  # i.e. production over HTTPS: tell browsers to never use plain HTTP
+        response.headers["Strict-Transport-Security"] = "max-age=31536000"
     if request.url.path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-store"
     return response

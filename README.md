@@ -12,11 +12,15 @@ docker compose up --build
 ```
 
 - App: http://localhost:8000
-- API docs (auto-generated): http://localhost:8000/docs
+- API docs (auto-generated, development only; `ENABLE_DOCS=true` in `.env`): http://localhost:8000/docs
 - Health check: http://localhost:8000/api/health
 
 Migrations run automatically on start (`alembic upgrade head`) and the default exercise list is seeded.
 Friends register with the `INVITE_CODE` from `.env`.
+
+## Deploy
+
+See [DEPLOY.md](DEPLOY.md) (in Hebrew): production stack = `docker-compose.prod.yml` (db + app + Caddy with automatic HTTPS), `.env.production.example`, `scripts/backup.sh` / `restore.sh`.
 
 ## Tests
 
