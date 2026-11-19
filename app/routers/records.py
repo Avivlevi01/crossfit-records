@@ -52,13 +52,7 @@ def _validate_for_exercise(data: RecordIn, exercise: Exercise) -> None:
         raise HTTPException(422, "Date can't be in the future")
 
 
-def _value_set(r: Record) -> ValueSet:
-    return ValueSet(
-        weight_kg=float(r.weight_kg) if r.weight_kg is not None else None,
-        reps=r.reps,
-        time_seconds=float(r.time_seconds) if r.time_seconds is not None else None,
-        distance_m=r.distance_m,
-    )
+_value_set = ValueSet.from_record
 
 
 def _histories(db: Session, records: list[Record]) -> dict[tuple[int, int], list[Record]]:

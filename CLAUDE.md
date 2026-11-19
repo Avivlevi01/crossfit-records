@@ -16,7 +16,7 @@ Owner: Aviv (junior developer, writes Hebrew; reply in Hebrew, explain in simple
 
 ## Plan (stages)
 
-1 Infrastructure (DONE) -> 2 MVP: auth, exercises, records CRUD, view others, comments, basic UI + logo (DONE 2026-11-19) -> 3 PR/1RM/chart/celebration (DONE 2026-11-19) -> 4 leaderboard -> 5 polish WOD/run display (forms already handle all 4 kinds) -> 6 timer -> 7 deploy + backups -> 8 polish.
+1 Infrastructure (DONE) -> 2 MVP: auth, exercises, records CRUD, view others, comments, basic UI + logo (DONE 2026-11-19) -> 3 PR/1RM/chart/celebration (DONE 2026-11-19) -> 4 leaderboard (DONE 2026-11-19) -> 5 polish WOD/run display (forms already handle all 4 kinds) -> 6 timer -> 7 deploy + backups -> 8 polish.
 Wait for the owner's go-ahead between stages.
 
 ## Decisions made while building stage 2
@@ -27,7 +27,7 @@ Wait for the owner's go-ahead between stages.
 - CSP is `default-src 'self'`: no inline scripts/styles and no external fonts/CDNs. Keep JS/CSS in files; set dynamic styles via `el.style`. /docs is exempt (loads Swagger from a CDN); consider disabling /docs in production.
 - Front-end builds DOM with `h()` (text only, never innerHTML with user data). Mixed Hebrew/number lines (e.g. "102.5 kg x 3") wrap the unit in a Unicode isolate (`unit()` in app.js), otherwise the order scrambles in RTL.
 - Impact font has one weight: `font-synthesis-weight: none` on html avoids blobby fake bold.
-- Tests: `docker compose run --rm app pytest -q` (38 tests, use a throw-away `crossfit_test` DB). Run after backend changes. Test dates must not be in the future (the API rejects dates > tomorrow).
+- Tests: `docker compose run --rm app pytest -q` (48 tests, use a throw-away `crossfit_test` DB). Run after backend changes. Test dates must not be in the future (the API rejects dates > tomorrow).
 
 ## PR rules (stage 3; all in app/pr.py, the single source of truth, reuse it for the leaderboard)
 
@@ -35,6 +35,7 @@ Wait for the owner's go-ahead between stages.
 - Est. 1RM = Epley (`w*(1+reps/30)`, a single = the weight), shown only for <= 12 reps; informational, not used to decide PRs.
 - API: every RecordOut has `est_1rm`, `is_pr` (beat everything before it by date; the first record is only a baseline) and `is_current_pr`. Only the POST/PUT response carries `celebration` (`new` = broke the PR, with `previous`; `first` = first record for the exercise; absent for ties/worse).
 - UI: gold PR badge on the current PR, per-exercise summary (PR + best 1RM), progress chart (hand-drawn SVG in js/chart.js, gold dots = PR-breaking records), full-screen celebration (js/celebrate.js + CSS, particles disabled under prefers-reduced-motion). "first" record only shows a toast.
+- Leaderboard (stage 4): `GET /api/leaderboard` = exercises that have records + participant count (most popular first); `GET /api/leaderboard/{exercise_id}` = one entry per person using their PR (best ever, not latest), sorted best first; ties share a rank (1,1,3) and the earlier PR is listed first. Visible to every logged-in user. UI tab `#/board[/id]`: medals for top 3, banner "rank X of N" + gap to the nearest person ahead (skips people tied with me; text from `improvementText()` in format.js, shared with the celebration), "add a record" shortcut when I have none (dialog preselects the exercise).
 - Bidi gotcha (bit us twice): a Hebrew word inside a LTR string reorders the numbers after it. Put date, value and unit in separate isolated pieces (`<bdi>`, `unit()`), never in one `dir=ltr` string.
 - The hidden preview pane throttles animations/ResizeObserver: to inspect a finished animation run `document.getAnimations().forEach(a => a.finish())`; charts are drawn explicitly via `box.redraw()` when the panel opens.
 - JS layout: app.js (views/router/API), dom.js (h/s/icon), format.js (numbers/time/dates/value text), i18n.js, chart.js, celebrate.js.

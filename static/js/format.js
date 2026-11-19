@@ -66,3 +66,28 @@ export function valueTextFor(kind, v) {
 }
 
 export const valueText = (rec) => valueTextFor(rec.exercise.kind, rec);
+
+/**
+ * How much better `now` is than `prev` ("+2.5 kg", "+2 reps", "0:12 faster").
+ * Used for "you beat your old PR by..." and "you are X behind the next place".
+ */
+export function improvementText(kind, now, prev) {
+  if (!prev) return '';
+  const plus = (n, word) => `+${fmtNum(+n.toFixed(2))} ${unit(word)}`;
+  const faster = () => t('delta_faster', { time: fmtTime(prev.time_seconds - now.time_seconds) });
+  switch (kind) {
+    case 'weight_reps':
+      return now.weight_kg > prev.weight_kg
+        ? plus(now.weight_kg - prev.weight_kg, t('kg'))
+        : plus(now.reps - prev.reps, t('reps_word'));
+    case 'reps_only':
+      return plus(now.reps - prev.reps, t('reps_word'));
+    case 'distance_time':
+      // farther wins; at the same distance the faster time wins
+      return now.distance_m > prev.distance_m ? plus(now.distance_m - prev.distance_m, t('meters')) : faster();
+    case 'time':
+      return faster();
+    default:
+      return '';
+  }
+}

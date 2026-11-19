@@ -4,31 +4,9 @@
 
 import { h, s } from './dom.js';
 import { t } from './i18n.js';
-import { fmtNum, fmtTime, unit, valueText } from './format.js';
+import { improvementText, valueText } from './format.js';
 
 const SPARKS = 44;
-
-/** "+2.5 kg", "+2 reps", "0:12 faster"... how much better than the previous PR. */
-function deltaText(kind, now, prev) {
-  if (!prev) return '';
-  const plus = (n, word) => `+${fmtNum(+n.toFixed(2))} ${unit(word)}`;
-  const faster = () => t('delta_faster', { time: fmtTime(prev.time_seconds - now.time_seconds) });
-  switch (kind) {
-    case 'weight_reps':
-      return now.weight_kg > prev.weight_kg
-        ? plus(now.weight_kg - prev.weight_kg, t('kg'))
-        : plus(now.reps - prev.reps, t('reps_word'));
-    case 'reps_only':
-      return plus(now.reps - prev.reps, t('reps_word'));
-    case 'distance_time':
-      // farther wins; at the same distance the faster time wins
-      return now.distance_m > prev.distance_m ? plus(now.distance_m - prev.distance_m, t('meters')) : faster();
-    case 'time':
-      return faster();
-    default:
-      return '';
-  }
-}
 
 function barbell() {
   const plate = (x, w, hgt, cls) => s('rect', { class: `plate ${cls}`, x, y: 45 - hgt / 2, width: w, height: hgt, rx: 3 });
@@ -71,7 +49,7 @@ export function celebratePR(rec) {
     if (e.key === 'Escape' || e.key === 'Enter') close();
   };
   const go = h('button', { type: 'button', class: 'btn primary', onclick: close }, t('pr_go'));
-  const delta = deltaText(kind, rec, prev);
+  const delta = improvementText(kind, rec, prev);
 
   const overlay = h('div', { class: 'pr-overlay', role: 'alertdialog', 'aria-label': t('pr_title'), onclick: close },
     burst(),

@@ -4,7 +4,7 @@
 
 import { t, getLang, setLang, applyDocLang, categoryName, entriesText } from './i18n.js';
 import { h, icon, appendKids } from './dom.js';
-import { fmtNum, fmtTime, parseTime, fmtDate, fmtDateTime, unit, valueText } from './format.js';
+import { fmtNum, fmtTime, parseTime, fmtDate, fmtDateTime, unit, valueText, valueTextFor, improvementText } from './format.js';
 import { progressChart } from './chart.js';
 import { celebratePR } from './celebrate.js';
 
@@ -112,10 +112,16 @@ function updateChrome() {
   $('#brand').hidden = !me;
   $('#tabbar').hidden = !me;
   $('#tabMe').textContent = t('nav_mine');
+  $('#tabBoard').textContent = t('nav_board');
   $('#tabFriends').textContent = t('nav_friends');
   const hash = location.hash || '#/me';
+  const onBoard = hash.startsWith('#/board');
   const onFriends = hash.startsWith('#/friends') || hash.startsWith('#/u/');
-  for (const [el, active] of [[$('#tabMe'), !onFriends], [$('#tabFriends'), onFriends]]) {
+  for (const [el, active] of [
+    [$('#tabMe'), !onBoard && !onFriends],
+    [$('#tabBoard'), onBoard],
+    [$('#tabFriends'), onFriends],
+  ]) {
     if (active) el.setAttribute('aria-current', 'page');
     else el.removeAttribute('aria-current');
   }
@@ -431,6 +437,87 @@ async function viewMine() {
   );
 }
 
+// ---------- leaderboard ----------
+
+/** Banner above the ranking: where I stand and how far the next place is. */
+function myPositionBanner(entries, kind, exercise, reload) {
+  const mine = entries.findIndex((e) => e.user_id === me.id);
+  if (mine === -1) {
+    return h('div', { class: 'board-banner' },
+      h('span', {}, t('board_not_in')),
+      h('button', { type: 'button', class: 'btn small primary', onclick: () => openRecordDialog(null, reload, exercise.id) }, icon('plus'), t('board_add')),
+    );
+  }
+  const me_ = entries[mine];
+  const parts = [h('strong', { class: 'display' }, t('board_rank', { rank: me_.rank, total: entries.length }))];
+  if (me_.rank === 1) {
+    const sharing = entries.filter((e) => e.rank === 1).length > 1;
+    parts.push(h('span', {}, t(sharing ? 'board_tied_lead' : 'board_leader')));
+  } else {
+    // the closest person ahead of me (skipping anyone tied with me)
+    let above = mine - 1;
+    while (entries[above].rank === me_.rank) above--;
+    const ahead = entries[above];
+    parts.push(h('span', {}, t('board_gap', { name: ahead.username, gap: '' }), h('bdi', { dir: 'ltr' }, improvementText(kind, ahead, me_))));
+  }
+  return h('div', { class: `board-banner${me_.rank === 1 ? ' lead' : ''}` }, icon('trophy'), h('div', { class: 'banner-text' }, parts));
+}
+
+function boardRow(e, kind, index) {
+  const isMe = e.user_id === me.id;
+  const row = h('li', { class: `board-row${isMe ? ' me' : ''}${e.rank <= 3 ? ` top${e.rank}` : ''}` },
+    h('a', { href: isMe ? '#/me' : `#/u/${e.user_id}` },
+      h('span', { class: 'rank' }, String(e.rank)),
+      h('span', { class: 'board-who' },
+        h('strong', {}, e.username, isMe ? h('span', { class: 'you' }, ` ${t('you')}`) : null),
+        h('small', {}, fmtDate(e.performed_on)),
+      ),
+      h('span', { class: 'board-score' },
+        h('span', { class: 'board-val display', dir: 'ltr' }, valueTextFor(kind, e)),
+        e.est_1rm ? h('small', { class: 'est', dir: 'ltr' }, `1RM≈${fmtNum(e.est_1rm)}`) : null,
+      ),
+    ),
+  );
+  row.style.animationDelay = `${Math.min(index, 12) * 40}ms`;
+  return row;
+}
+
+async function viewBoard(requestedId) {
+  const token = ++renderToken;
+  setContent(h('p', { class: 'loading' }, t('loading')));
+  let overview, board;
+  try {
+    overview = await api('/api/leaderboard');
+    const id = overview.some((o) => o.exercise.id === requestedId) ? requestedId : overview[0]?.exercise.id;
+    if (id) board = await api(`/api/leaderboard/${id}`);
+  } catch (e) {
+    if (token === renderToken && me) setContent(h('p', { class: 'form-error' }, errorText(e)));
+    return;
+  }
+  if (token !== renderToken) return;
+
+  const title = h('div', { class: 'page-head' }, h('h2', { class: 'display' }, t('board_title')));
+  if (!board) {
+    setContent(title, h('p', { class: 'empty' }, t('board_empty')));
+    return;
+  }
+  const { exercise, entries } = board;
+  const reload = () => viewBoard(exercise.id);
+
+  const pick = h('select', {
+    id: 'board-ex', 'aria-label': t('board_pick'),
+    onchange: () => { location.hash = `#/board/${pick.value}`; },
+  }, overview.map((o) => h('option', { value: String(o.exercise.id) }, `${o.exercise.name} (${o.participants})`)));
+  pick.value = String(exercise.id);
+
+  setContent(
+    title,
+    h('div', { class: 'toolbar' }, pick),
+    myPositionBanner(entries, exercise.kind, exercise, reload),
+    h('ol', { class: 'board' }, entries.map((e, i) => boardRow(e, exercise.kind, i))),
+  );
+}
+
 // ---------- friends ----------
 
 async function viewFriends() {
@@ -507,7 +594,7 @@ async function viewUser(userId) {
 
 // ---------- add / edit record dialog ----------
 
-function openRecordDialog(rec, onSaved) {
+function openRecordDialog(rec, onSaved, presetExerciseId = null) {
   const dlg = $('#recordDialog');
   const vals = {
     weight: rec?.weight_kg != null ? fmtNum(rec.weight_kg) : '',
@@ -517,7 +604,7 @@ function openRecordDialog(rec, onSaved) {
     date: rec?.performed_on ?? todayISO(),
     note: rec?.note ?? '',
   };
-  let exId = rec ? rec.exercise.id : Number(mineFilter) || exercises[0]?.id;
+  let exId = rec ? rec.exercise.id : presetExerciseId || Number(mineFilter) || exercises[0]?.id;
 
   const err = h('p', { class: 'form-error', role: 'alert' });
   const select = h('select', { id: 'f-ex', onchange: () => { exId = Number(select.value); drawFields(); } });
@@ -665,7 +752,9 @@ function route() {
   }
   const hash = location.hash || '#/me';
   const user = hash.match(/^#\/u\/(\d+)$/);
+  const board = hash.match(/^#\/board(?:\/(\d+))?$/);
   if (hash === '#/me') viewMine();
+  else if (board) viewBoard(board[1] ? Number(board[1]) : null);
   else if (hash === '#/friends') viewFriends();
   else if (user) viewUser(Number(user[1]));
   else location.hash = '#/me';

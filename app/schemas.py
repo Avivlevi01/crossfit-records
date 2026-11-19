@@ -67,6 +67,15 @@ class ValueSet(BaseModel):
     time_seconds: float | None
     distance_m: int | None
 
+    @classmethod
+    def from_record(cls, r) -> "ValueSet":
+        return cls(
+            weight_kg=float(r.weight_kg) if r.weight_kg is not None else None,
+            reps=r.reps,
+            time_seconds=float(r.time_seconds) if r.time_seconds is not None else None,
+            distance_m=r.distance_m,
+        )
+
 
 class Celebration(BaseModel):
     """Sent only right after saving a record that is worth celebrating."""
@@ -91,6 +100,28 @@ class RecordOut(BaseModel):
     is_pr: bool  # beat everything logged before it
     is_current_pr: bool  # holds the PR right now
     celebration: Celebration | None = None
+
+
+class LeaderboardExercise(BaseModel):
+    """An exercise that has at least one record, and how many people have logged it."""
+
+    exercise: ExerciseOut
+    participants: int
+
+
+class LeaderboardEntry(ValueSet):
+    """One person's best record (their PR) for the exercise."""
+
+    rank: int  # 1 = best. Equal PRs share a rank (1, 1, 3...)
+    user_id: int
+    username: str
+    performed_on: date
+    est_1rm: float | None
+
+
+class LeaderboardOut(BaseModel):
+    exercise: ExerciseOut
+    entries: list[LeaderboardEntry]
 
 
 class CommentIn(BaseModel):

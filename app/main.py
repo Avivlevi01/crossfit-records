@@ -6,7 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal, get_db
-from app.routers import auth, exercises, records
+from app.routers import auth, exercises, leaderboard, records
 from app.seed import seed_default_exercises
 
 
@@ -22,6 +22,7 @@ app = FastAPI(title="CrossFit Records", lifespan=lifespan)
 app.include_router(auth.router)
 app.include_router(exercises.router)
 app.include_router(records.router)
+app.include_router(leaderboard.router)
 
 
 @app.get("/api/health")
