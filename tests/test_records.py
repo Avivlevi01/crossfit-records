@@ -135,6 +135,37 @@ def test_comments_vanish_with_their_record(user_client):
     assert b.get(f"/api/records/{rec['id']}/comments").status_code == 404
 
 
+def test_benchmark_wods_come_with_descriptions(user_client):
+    c = user_client("aviv")
+    by_name = {e["name"]: e for e in c.get("/api/exercises").json()}
+    assert "Thrusters" in by_name["Fran"]["description"] and "Pull-ups" in by_name["Fran"]["description"]
+    assert by_name["Hyrox Full Race"]["description"]
+    assert by_name["Back Squat"]["description"] is None
+
+
+def test_seed_refreshes_descriptions_of_existing_defaults(user_client, db_session):
+    from app.models import Exercise
+    from app.seed import seed_default_exercises
+
+    c = user_client("aviv")
+    with db_session() as s:
+        s.query(Exercise).filter_by(name="Fran").update({"description": "stale text"})
+        s.commit()
+        seed_default_exercises(s)
+    fran = next(e for e in c.get("/api/exercises").json() if e["name"] == "Fran")
+    assert "stale" not in fran["description"] and "Thrusters" in fran["description"]
+
+
+def test_custom_exercise_description(user_client):
+    c = user_client("aviv")
+    made = c.post("/api/exercises", json={"name": "Farmers 200", "kind": "time", "description": "  200 m with 2x24 kg  "})
+    assert made.status_code == 201 and made.json()["description"] == "200 m with 2x24 kg"
+    blank = c.post("/api/exercises", json={"name": "No desc", "kind": "time", "description": "   "})
+    assert blank.json()["description"] is None
+    too_long = c.post("/api/exercises", json={"name": "Too long", "kind": "time", "description": "x" * 201})
+    assert too_long.status_code == 422
+
+
 def test_custom_exercises(user_client):
     a, b = user_client("aviv"), user_client("dana")
     made = a.post("/api/exercises", json={"name": "Zercher Squat", "kind": "weight_reps"})

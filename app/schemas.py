@@ -37,6 +37,7 @@ class ExerciseIn(BaseModel):
     name: ShortText
     category: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=40)] = "Custom"
     kind: ExerciseKind
+    description: Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] | None = None
 
 
 class ExerciseOut(BaseModel):
@@ -45,6 +46,7 @@ class ExerciseOut(BaseModel):
     name: str
     category: str
     kind: ExerciseKind
+    description: str | None
     is_default: bool
     created_by_id: int | None
 

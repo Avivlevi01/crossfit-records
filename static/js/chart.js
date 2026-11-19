@@ -3,19 +3,24 @@
 
 import { h, s } from './dom.js';
 import { t } from './i18n.js';
-import { fmtDate, fmtNum, fmtTime, valueText } from './format.js';
+import { fmtDate, fmtNum, fmtTime, paceSeconds, valueText } from './format.js';
 
-// What can be plotted for each kind of exercise.
+const fmtPace = (v) => fmtTime(Math.round(v));
+const fmtMeters = (v) => (v >= 1000 ? `${+(v / 1000).toFixed(2)}km` : `${fmtNum(v)}m`); // plain units: axis labels are tiny
+
+// What can be plotted for each kind of exercise. `lowerBetter` metrics are drawn upside down,
+// so an improving line always goes UP, whatever is being measured.
 const METRICS = {
   weight_reps: [
     { label: 'chart_weight', get: (r) => r.weight_kg, fmt: fmtNum },
     { label: 'chart_1rm', get: (r) => r.est_1rm, fmt: fmtNum },
   ],
   reps_only: [{ label: 'chart_reps', get: (r) => r.reps, fmt: fmtNum }],
-  time: [{ label: 'chart_time', get: (r) => r.time_seconds, fmt: fmtTime }],
+  time: [{ label: 'chart_time', get: (r) => r.time_seconds, fmt: fmtTime, lowerBetter: true }],
   distance_time: [
-    { label: 'chart_distance', get: (r) => r.distance_m, fmt: fmtNum },
-    { label: 'chart_time', get: (r) => r.time_seconds, fmt: fmtTime },
+    { label: 'chart_distance', get: (r) => r.distance_m, fmt: fmtMeters },
+    { label: 'chart_time', get: (r) => r.time_seconds, fmt: fmtTime, lowerBetter: true },
+    { label: 'chart_pace', get: paceSeconds, fmt: fmtPace, lowerBetter: true },
   ],
 };
 
@@ -50,7 +55,8 @@ export function progressChart(records, kind) {
     }, t(m.label)),
   );
   const toggles = metrics.length > 1 ? h('div', { class: 'seg-group compact' }, buttons) : null;
-  const box = h('div', { class: 'chart' }, toggles, host, caption);
+  const hint = h('p', { class: 'chart-hint', hidden: true }, t('chart_lower_better'));
+  const box = h('div', { class: 'chart' }, toggles, hint, host, caption);
 
   function showCaption(r) {
     caption.replaceChildren(
@@ -64,6 +70,7 @@ export function progressChart(records, kind) {
     const width = Math.floor(host.clientWidth);
     if (width < 80 || (width === drawnWidth && !force)) return; // hidden panel, or nothing changed
     drawnWidth = width;
+    hint.hidden = !metric.lowerBetter;
     buttons.forEach((b, i) => {
       b.classList.toggle('on', metrics[i] === metric);
       b.setAttribute('aria-pressed', String(metrics[i] === metric));
@@ -90,7 +97,8 @@ export function progressChart(records, kind) {
     const plotW = width - PAD.left - PAD.right;
     const plotH = HEIGHT - PAD.top - PAD.bottom;
     const X = (ms) => (t1 === t0 ? PAD.left + plotW / 2 : PAD.left + ((ms - t0) / (t1 - t0)) * plotW);
-    const Y = (v) => PAD.top + plotH - ((v - lo) / (hi - lo)) * plotH;
+    const share = (v) => (v - lo) / (hi - lo);
+    const Y = (v) => PAD.top + (metric.lowerBetter ? share(v) : 1 - share(v)) * plotH; // small time = high up
     const xy = points.map((p, i) => [X(times[i]), Y(p.v)]);
     const line = xy.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
     const area = `${line} L${xy[xy.length - 1][0].toFixed(1)} ${PAD.top + plotH} L${xy[0][0].toFixed(1)} ${PAD.top + plotH} Z`;

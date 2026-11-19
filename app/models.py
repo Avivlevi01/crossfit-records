@@ -63,6 +63,7 @@ class Exercise(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(80))
     category: Mapped[str] = mapped_column(String(40))  # e.g. "Olympic lifts", "Hyrox"
+    description: Mapped[str | None] = mapped_column(String(300))  # e.g. what Fran consists of
     kind: Mapped[str] = mapped_column(String(20), default=ExerciseKind.WEIGHT_REPS.value)
     is_default: Mapped[bool] = mapped_column(default=False)
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))

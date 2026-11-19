@@ -4,7 +4,7 @@
 
 import { t, getLang, setLang, applyDocLang, categoryName, entriesText } from './i18n.js';
 import { h, icon, appendKids } from './dom.js';
-import { fmtNum, fmtTime, parseTime, fmtDate, fmtDateTime, unit, valueText, valueTextFor, improvementText } from './format.js';
+import { fmtNum, fmtDate, fmtDateTime, unit, valueText, valueTextFor, improvementText, paceText } from './format.js';
 import { progressChart } from './chart.js';
 import { celebratePR } from './celebrate.js';
 
@@ -264,6 +264,7 @@ function recordGroups(records, { editable, onChange }) {
         h('span', { class: 'tag' }, categoryName(g.exercise.category)),
         h('span', { class: 'count' }, entriesText(g.items.length)),
       ),
+      g.exercise.description ? h('p', { class: 'ex-desc inset', dir: 'auto' }, g.exercise.description) : null,
       h('div', { class: 'group-summary' },
         best ? h('span', { class: 'sum pr' }, icon('trophy'), h('b', {}, t('pr_current')), h('span', { dir: 'ltr' }, valueText(best))) : null,
         best1rm ? h('span', { class: 'sum' }, h('b', {}, t('est_1rm')), h('span', { dir: 'ltr' }, `≈ ${fmtNum(best1rm)} ${unit(t('kg'))}`)) : null,
@@ -320,6 +321,7 @@ function entryRow(rec, { editable, onChange, index }) {
       h('div', { class: 'entry-meta' },
         h('span', {}, fmtDate(rec.performed_on)),
         rec.est_1rm ? h('span', { class: 'est', dir: 'ltr' }, `1RM≈${fmtNum(rec.est_1rm)}`) : null,
+        rec.exercise.kind === 'distance_time' ? h('span', { class: 'est', dir: 'ltr' }, paceText(rec)) : null,
         rec.note ? h('span', { class: 'note' }, rec.note) : null,
       ),
     ),
@@ -513,6 +515,7 @@ async function viewBoard(requestedId) {
   setContent(
     title,
     h('div', { class: 'toolbar' }, pick),
+    exercise.description ? h('p', { class: 'ex-desc', dir: 'auto' }, exercise.description) : null,
     myPositionBanner(entries, exercise.kind, exercise, reload),
     h('ol', { class: 'board' }, entries.map((e, i) => boardRow(e, exercise.kind, i))),
   );
@@ -596,17 +599,22 @@ async function viewUser(userId) {
 
 function openRecordDialog(rec, onSaved, presetExerciseId = null) {
   const dlg = $('#recordDialog');
+  const secs = rec?.time_seconds;
+  const longRun = rec?.distance_m >= 1000;
   const vals = {
     weight: rec?.weight_kg != null ? fmtNum(rec.weight_kg) : '',
     reps: rec?.reps != null ? String(rec.reps) : '',
-    time: rec?.time_seconds != null ? fmtTime(rec.time_seconds) : '',
-    distance: rec?.distance_m != null ? String(rec.distance_m) : '',
+    min: secs != null ? String(Math.floor(secs / 60)) : '',
+    sec: secs != null ? String(+(secs % 60).toFixed(2)) : '',
+    distance: rec?.distance_m != null ? String(longRun ? +(rec.distance_m / 1000).toFixed(3) : rec.distance_m) : '',
+    distUnit: rec && !longRun ? 'm' : 'km', // runs are usually thought of in km
     date: rec?.performed_on ?? todayISO(),
     note: rec?.note ?? '',
   };
   let exId = rec ? rec.exercise.id : presetExerciseId || Number(mineFilter) || exercises[0]?.id;
 
   const err = h('p', { class: 'form-error', role: 'alert' });
+  const exDesc = h('p', { class: 'ex-desc', dir: 'auto' }); // e.g. what Fran consists of
   const select = h('select', { id: 'f-ex', onchange: () => { exId = Number(select.value); drawFields(); } });
   function fillSelect() {
     select.replaceChildren(
@@ -625,8 +633,44 @@ function openRecordDialog(rec, onSaved, presetExerciseId = null) {
     const input = h('input', { id, value: vals[key], oninput: () => { vals[key] = input.value; }, ...props });
     return field(id, label, input);
   }
+  // Minutes and seconds are two plain number boxes: phone number pads have no ":" key.
+  function timeField() {
+    const min = h('input', {
+      id: 'f-min', type: 'number', inputmode: 'numeric', min: 0, max: 999, step: 1,
+      placeholder: t('min_short'), 'aria-label': t('minutes'), value: vals.min,
+      oninput: () => { vals.min = min.value; },
+    });
+    const sec = h('input', {
+      id: 'f-sec', inputmode: 'decimal', autocomplete: 'off',
+      placeholder: t('sec_short'), 'aria-label': t('seconds'), value: vals.sec,
+      oninput: () => { vals.sec = sec.value; },
+    });
+    return h('div', { class: 'field' },
+      h('label', { for: 'f-min' }, t('time')),
+      h('div', { class: 'time-inputs', dir: 'ltr' }, min, h('span', { class: 'colon', 'aria-hidden': 'true' }, ':'), sec),
+    );
+  }
+
+  function distanceField() {
+    const dist = h('input', {
+      id: 'f-dist', inputmode: 'decimal', autocomplete: 'off', required: true, value: vals.distance,
+      oninput: () => { vals.distance = dist.value; },
+    });
+    const unitSel = h('select', {
+      id: 'f-dunit', 'aria-label': t('unit_label'), value: vals.distUnit,
+      onchange: () => { vals.distUnit = unitSel.value; },
+    }, h('option', { value: 'km' }, t('km')), h('option', { value: 'm' }, t('meters')));
+    return h('div', { class: 'field' },
+      h('label', { for: 'f-dist' }, t('distance')),
+      h('div', { class: 'dist-row' }, dist, unitSel),
+    );
+  }
+
   function drawFields() {
-    const kind = exerciseById(exId).kind;
+    const exercise = exerciseById(exId);
+    const kind = exercise.kind;
+    exDesc.textContent = exercise.description ?? '';
+    exDesc.hidden = !exercise.description;
     const parts = [];
     if (kind === 'weight_reps') {
       parts.push(numberField('f-weight', 'weight', t('weight'), { inputmode: 'decimal', autocomplete: 'off', required: true }));
@@ -634,12 +678,8 @@ function openRecordDialog(rec, onSaved, presetExerciseId = null) {
     if (kind === 'weight_reps' || kind === 'reps_only') {
       parts.push(numberField('f-reps', 'reps', t('reps'), { type: 'number', inputmode: 'numeric', min: 1, step: 1, required: true }));
     }
-    if (kind === 'distance_time') {
-      parts.push(numberField('f-dist', 'distance', t('distance'), { type: 'number', inputmode: 'numeric', min: 1, step: 1, required: true }));
-    }
-    if (kind === 'time' || kind === 'distance_time') {
-      parts.push(numberField('f-time', 'time', t('time'), { inputmode: 'decimal', placeholder: t('time_hint'), autocomplete: 'off', required: true }));
-    }
+    if (kind === 'distance_time') parts.push(distanceField());
+    if (kind === 'time' || kind === 'distance_time') parts.push(timeField());
     fields.replaceChildren(...parts);
   }
   drawFields();
@@ -655,6 +695,7 @@ function openRecordDialog(rec, onSaved, presetExerciseId = null) {
     },
   });
   const newKind = h('select', { id: 'x-kind' }, KINDS.map((k) => h('option', { value: k }, t(`kind_${k}`))));
+  const newDesc = h('input', { id: 'x-desc', maxlength: 200, autocomplete: 'off' });
   const newErr = h('p', { class: 'form-error', role: 'alert' });
   const addExerciseBtn = h('button', {
       type: 'button', class: 'btn small',
@@ -663,13 +704,14 @@ function openRecordDialog(rec, onSaved, presetExerciseId = null) {
         try {
           const made = await api('/api/exercises', {
             method: 'POST',
-            body: { name: newName.value, kind: newKind.value, category: 'Custom' },
+            body: { name: newName.value, kind: newKind.value, category: 'Custom', description: newDesc.value.trim() || null },
           });
           exercises.push(made);
           exId = made.id;
           fillSelect();
           drawFields();
           newName.value = '';
+          newDesc.value = '';
           newBox.hidden = true;
           toast(t('ex_added'));
         } catch (ex) {
@@ -680,6 +722,7 @@ function openRecordDialog(rec, onSaved, presetExerciseId = null) {
   const newBox = h('div', { class: 'subform', hidden: true },
     field('x-name', t('ex_name'), newName),
     field('x-kind', t('ex_kind'), newKind),
+    field('x-desc', t('ex_desc'), newDesc),
     newErr,
     addExerciseBtn,
   );
@@ -703,8 +746,16 @@ function openRecordDialog(rec, onSaved, presetExerciseId = null) {
       const body = { exercise_id: exId, performed_on: vals.date, note: vals.note.trim() || null };
       if (kind === 'weight_reps') body.weight_kg = Number(vals.weight.replace(',', '.'));
       if (kind === 'weight_reps' || kind === 'reps_only') body.reps = Number(vals.reps);
-      if (kind === 'distance_time') body.distance_m = Number(vals.distance);
-      if (kind === 'time' || kind === 'distance_time') body.time_seconds = parseTime(vals.time);
+      if (kind === 'distance_time') {
+        body.distance_m = Math.round(Number(vals.distance.replace(',', '.')) * (vals.distUnit === 'km' ? 1000 : 1));
+      }
+      if (kind === 'time' || kind === 'distance_time') {
+        const mins = Number(vals.min || 0);
+        const secs = Number((vals.sec || '0').replace(',', '.'));
+        // minutes may exceed 59 (long WODs); seconds must be 0-59.99
+        body.time_seconds = mins >= 0 && secs >= 0 && secs < 60 ? mins * 60 + secs : NaN;
+        if (!(body.time_seconds > 0)) body.time_seconds = NaN;
+      }
       if (Object.values(body).some((v) => typeof v === 'number' && !Number.isFinite(v))) {
         err.textContent = t('err_validation');
         return;
@@ -725,6 +776,7 @@ function openRecordDialog(rec, onSaved, presetExerciseId = null) {
   },
     h('h2', { class: 'display' }, rec ? t('rec_edit') : t('rec_new')),
     field('f-ex', t('exercise'), select),
+    exDesc,
     toggleNew,
     newBox,
     fields,

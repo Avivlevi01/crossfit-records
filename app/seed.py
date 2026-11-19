@@ -1,6 +1,6 @@
 """The default exercise list. Safe to run on every start: it only adds what is missing."""
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Exercise, ExerciseKind
@@ -61,13 +61,36 @@ DEFAULT_EXERCISES: list[tuple[str, str, ExerciseKind]] = [
 ]
 
 
+# What the workout is (shown next to the exercise). Standard Rx weights are written men/women.
+DESCRIPTIONS: dict[str, str] = {
+    "Fran": "21-15-9 reps for time: Thrusters (43/30 kg) and Pull-ups",
+    "Grace": "30 Clean & Jerks for time (61/43 kg)",
+    "Helen": "3 rounds for time: 400 m run, 21 Kettlebell swings (24/16 kg), 12 Pull-ups",
+    "Karen": "150 Wall Balls for time (9/6 kg)",
+    "Murph": "For time: 1 mile run, 100 Pull-ups, 200 Push-ups, 300 Air squats, 1 mile run (optional 9/6 kg vest)",
+    "Run (any distance)": "Log the distance and your time; the pace is calculated for you",
+    "Hyrox SkiErg 1 km": "1000 m on the SkiErg",
+    "Hyrox Sled Push": "50 m sled push (weight depends on your division)",
+    "Hyrox Sled Pull": "50 m sled pull (weight depends on your division)",
+    "Hyrox Burpee Broad Jumps": "80 m of burpee broad jumps",
+    "Hyrox Row 1 km": "1000 m on the rower",
+    "Hyrox Farmers Carry": "200 m farmers carry (weight depends on your division)",
+    "Hyrox Sandbag Lunges": "100 m sandbag lunges (weight depends on your division)",
+    "Hyrox Wall Balls": "100 Wall Balls (weight depends on your division)",
+    "Hyrox Full Race": "8 x 1 km run, each followed by a station: SkiErg, sled push, sled pull, burpee broad jumps, row, farmers carry, sandbag lunges, wall balls",
+}
+
+
 def seed_default_exercises(db: Session) -> int:
-    existing = {n for n in db.scalars(select(func.lower(Exercise.name)))}
+    """Adds missing default exercises and keeps the descriptions of existing ones up to date."""
+    existing = {e.name.lower(): e for e in db.scalars(select(Exercise))}
     added = 0
     for category, name, kind in DEFAULT_EXERCISES:
-        if name.lower() in existing:
-            continue
-        db.add(Exercise(name=name, category=category, kind=kind.value, is_default=True))
-        added += 1
+        found = existing.get(name.lower())
+        if found is None:
+            db.add(Exercise(name=name, category=category, kind=kind.value, is_default=True, description=DESCRIPTIONS.get(name)))
+            added += 1
+        elif found.is_default and found.description != DESCRIPTIONS.get(name):
+            found.description = DESCRIPTIONS.get(name)
     db.commit()
     return added

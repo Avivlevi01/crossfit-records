@@ -16,7 +16,7 @@ Owner: Aviv (junior developer, writes Hebrew; reply in Hebrew, explain in simple
 
 ## Plan (stages)
 
-1 Infrastructure (DONE) -> 2 MVP: auth, exercises, records CRUD, view others, comments, basic UI + logo (DONE 2026-11-19) -> 3 PR/1RM/chart/celebration (DONE 2026-11-19) -> 4 leaderboard (DONE 2026-11-19) -> 5 polish WOD/run display (forms already handle all 4 kinds) -> 6 timer -> 7 deploy + backups -> 8 polish.
+1 Infrastructure (DONE) -> 2 MVP: auth, exercises, records CRUD, view others, comments, basic UI + logo (DONE 2026-11-19) -> 3 PR/1RM/chart/celebration (DONE 2026-11-19) -> 4 leaderboard (DONE 2026-11-19) -> 5 WOD/run polish (DONE 2026-11-19) -> 6 timer -> 7 deploy + backups -> 8 polish.
 Wait for the owner's go-ahead between stages.
 
 ## Decisions made while building stage 2
@@ -27,7 +27,9 @@ Wait for the owner's go-ahead between stages.
 - CSP is `default-src 'self'`: no inline scripts/styles and no external fonts/CDNs. Keep JS/CSS in files; set dynamic styles via `el.style`. /docs is exempt (loads Swagger from a CDN); consider disabling /docs in production.
 - Front-end builds DOM with `h()` (text only, never innerHTML with user data). Mixed Hebrew/number lines (e.g. "102.5 kg x 3") wrap the unit in a Unicode isolate (`unit()` in app.js), otherwise the order scrambles in RTL.
 - Impact font has one weight: `font-synthesis-weight: none` on html avoids blobby fake bold.
-- Tests: `docker compose run --rm app pytest -q` (48 tests, use a throw-away `crossfit_test` DB). Run after backend changes. Test dates must not be in the future (the API rejects dates > tomorrow).
+- WOD/run polish (stage 5): time is entered as two number boxes (minutes may be >59, seconds 0-59.99) because phone number pads have no ":" key. Distance is entered with a km/m selector (default km; stored as integer meters) and shown as "5.25 km"; distance+time records show pace (min/km) in the entry meta. Exercises have an optional `description` (what the workout is: seeded for Fran/Grace/Helen/Karen/Murph/Hyrox/Run; refreshed on every start by `seed_default_exercises`; custom exercises can set one). Descriptions are English only (dir=auto). Charts: lower-is-better metrics (time, pace) are drawn flipped so an improving line goes up; distance+time charts have distance/time/pace views.
+- NOT built (ask the owner if wanted): Rx vs Scaled for WODs. Right now scaled and Rx times are compared directly; people can note "scaled" in the note field.
+- Tests: `docker compose run --rm app pytest -q` (51 tests, use a throw-away `crossfit_test` DB). Run after backend changes. Test dates must not be in the future (the API rejects dates > tomorrow).
 
 ## PR rules (stage 3; all in app/pr.py, the single source of truth, reuse it for the leaderboard)
 

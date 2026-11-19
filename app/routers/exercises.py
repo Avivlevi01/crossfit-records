@@ -27,6 +27,7 @@ def create_exercise(
     ex = Exercise(
         name=data.name,
         category=data.category,
+        description=data.description or None,
         kind=data.kind.value,
         is_default=False,
         created_by_id=user.id,

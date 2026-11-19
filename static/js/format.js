@@ -13,17 +13,6 @@ export function fmtTime(seconds) {
   return hrs ? `${hrs}:${String(mins).padStart(2, '0')}:${secStr}` : `${mins}:${secStr}`;
 }
 
-/** "4:35" -> 275, "1:02:03" -> 3723, "95" -> 95. Returns NaN if it isn't a time. */
-export function parseTime(text) {
-  const parts = text.trim().replace(',', '.').split(':');
-  if (!text.trim() || parts.length > 3) return NaN;
-  let total = 0;
-  for (const p of parts) {
-    if (!/^\d+(\.\d+)?$/.test(p)) return NaN;
-    total = total * 60 + parseFloat(p);
-  }
-  return total;
-}
 
 const locale = () => (getLang() === 'he' ? 'he-IL' : 'en-GB');
 
@@ -49,6 +38,19 @@ export function fmtDateTime(iso) {
 // numbers around it when a left-to-right line like "102.5 kg × 3" is shown on a Hebrew page.
 export const unit = (s) => `⁦${s}⁩`;
 
+/** 800 -> "800 m", 5000 -> "5 km", 5250 -> "5.25 km". */
+export function fmtDistance(meters) {
+  return meters >= 1000
+    ? `${+(meters / 1000).toFixed(3)} ${unit(t('km'))}`
+    : `${meters} ${unit(t('meters'))}`;
+}
+
+/** Seconds per kilometre for a distance + time record (null if it has no distance). */
+export const paceSeconds = (r) => (r.distance_m && r.time_seconds ? r.time_seconds / (r.distance_m / 1000) : null);
+
+/** "5:00/km" */
+export const paceText = (r) => `${fmtTime(Math.round(paceSeconds(r)))}/${unit(t('km'))}`;
+
 /** Display text for a set of values; `v` has weight_kg, reps, time_seconds, distance_m. */
 export function valueTextFor(kind, v) {
   switch (kind) {
@@ -59,7 +61,7 @@ export function valueTextFor(kind, v) {
     case 'time':
       return fmtTime(v.time_seconds);
     case 'distance_time':
-      return `${fmtNum(v.distance_m)} ${unit(t('meters'))} · ${fmtTime(v.time_seconds)}`;
+      return `${fmtDistance(v.distance_m)} · ${fmtTime(v.time_seconds)}`;
     default:
       return '';
   }
