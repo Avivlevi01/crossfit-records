@@ -7,6 +7,7 @@ import { h, icon, appendKids } from './dom.js';
 import { fmtNum, fmtDate, fmtDateTime, unit, valueText, valueTextFor, improvementText, paceText } from './format.js';
 import { progressChart } from './chart.js';
 import { celebratePR } from './celebrate.js';
+import { buildTimerView, leaveTimer, stopTimer, subscribeTimer, timerActive } from './timer.js';
 
 const $ = (sel) => document.querySelector(sel);
 const CATEGORY_ORDER = ['Strength', 'Olympic lifts', 'Gymnastics', 'Benchmark WODs', 'Endurance', 'Hyrox', 'Custom'];
@@ -113,13 +114,16 @@ function updateChrome() {
   $('#tabbar').hidden = !me;
   $('#tabMe').textContent = t('nav_mine');
   $('#tabBoard').textContent = t('nav_board');
+  $('#tabTimer .tab-label').textContent = t('nav_timer');
   $('#tabFriends').textContent = t('nav_friends');
   const hash = location.hash || '#/me';
   const onBoard = hash.startsWith('#/board');
+  const onTimer = hash.startsWith('#/timer');
   const onFriends = hash.startsWith('#/friends') || hash.startsWith('#/u/');
   for (const [el, active] of [
-    [$('#tabMe'), !onBoard && !onFriends],
+    [$('#tabMe'), !onBoard && !onTimer && !onFriends],
     [$('#tabBoard'), onBoard],
+    [$('#tabTimer'), onTimer],
     [$('#tabFriends'), onFriends],
   ]) {
     if (active) el.setAttribute('aria-current', 'page');
@@ -141,6 +145,7 @@ function bindChrome() {
     }
     me = null;
     exercises = [];
+    stopTimer();
     location.hash = '';
     route();
   });
@@ -797,6 +802,7 @@ function openRecordDialog(rec, onSaved, presetExerciseId = null) {
 
 function route() {
   updateChrome();
+  leaveTimer(); // the timer keeps running in the background; only its screen goes away
   if (!me) {
     renderToken++;
     viewAuth();
@@ -806,7 +812,10 @@ function route() {
   const user = hash.match(/^#\/u\/(\d+)$/);
   const board = hash.match(/^#\/board(?:\/(\d+))?$/);
   if (hash === '#/me') viewMine();
-  else if (board) viewBoard(board[1] ? Number(board[1]) : null);
+  else if (hash === '#/timer') {
+    renderToken++;
+    setContent(buildTimerView());
+  } else if (board) viewBoard(board[1] ? Number(board[1]) : null);
   else if (hash === '#/friends') viewFriends();
   else if (user) viewUser(Number(user[1]));
   else location.hash = '#/me';
@@ -816,6 +825,8 @@ async function boot() {
   applyDocLang();
   bindChrome();
   window.addEventListener('hashchange', route);
+  const syncTimerDot = () => { $('#tabTimer .tab-dot').hidden = !timerActive(); }; // dot = a workout is running
+  subscribeTimer(syncTimerDot);
   try {
     me = await api('/api/auth/me');
     exercises = await api('/api/exercises');

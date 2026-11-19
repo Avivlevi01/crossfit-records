@@ -16,7 +16,7 @@ Owner: Aviv (junior developer, writes Hebrew; reply in Hebrew, explain in simple
 
 ## Plan (stages)
 
-1 Infrastructure (DONE) -> 2 MVP: auth, exercises, records CRUD, view others, comments, basic UI + logo (DONE 2026-11-19) -> 3 PR/1RM/chart/celebration (DONE 2026-11-19) -> 4 leaderboard (DONE 2026-11-19) -> 5 WOD/run polish (DONE 2026-11-19) -> 6 timer -> 7 deploy + backups -> 8 polish.
+1 Infrastructure (DONE) -> 2 MVP: auth, exercises, records CRUD, view others, comments, basic UI + logo (DONE 2026-11-19) -> 3 PR/1RM/chart/celebration (DONE 2026-11-19) -> 4 leaderboard (DONE 2026-11-19) -> 5 WOD/run polish (DONE 2026-11-19) -> 6 timer (DONE 2026-11-19) -> 7 deploy + backups -> 8 polish.
 Wait for the owner's go-ahead between stages.
 
 ## Decisions made while building stage 2
@@ -28,6 +28,8 @@ Wait for the owner's go-ahead between stages.
 - Front-end builds DOM with `h()` (text only, never innerHTML with user data). Mixed Hebrew/number lines (e.g. "102.5 kg x 3") wrap the unit in a Unicode isolate (`unit()` in app.js), otherwise the order scrambles in RTL.
 - Impact font has one weight: `font-synthesis-weight: none` on html avoids blobby fake bold.
 - WOD/run polish (stage 5): time is entered as two number boxes (minutes may be >59, seconds 0-59.99) because phone number pads have no ":" key. Distance is entered with a km/m selector (default km; stored as integer meters) and shown as "5.25 km"; distance+time records show pace (min/km) in the entry meta. Exercises have an optional `description` (what the workout is: seeded for Fran/Grace/Helen/Karen/Murph/Hyrox/Run; refreshed on every start by `seed_default_exercises`; custom exercises can set one). Descriptions are English only (dir=auto). Charts: lower-is-better metrics (time, pace) are drawn flipped so an improving line goes up; distance+time charts have distance/time/pace views.
+- Timer (stage 6, owner's choices): stopwatch / AMRAP / EMOM / Tabata on tab `#/timer`; beeps + vibration with one mute button (mute silences both; remembered); separate tool, does NOT create records; defaults Tabata 20/10 x 8, EMOM 10 min, AMRAP 12 min, get-ready countdown 10 s (0/5/10/15/30). Code: timer-core.js (pure logic: phases, locate(), cueFor(); unit-tested), timer-audio.js (WebAudio beeps, vibrate, Wake Lock), timer.js (engine + screen). The running timer lives in the module, so it keeps running/beeping when you open other tabs (red dot on the Timer tab); it is stopped on logout. Time comes from performance.now() deltas, not interval counting, so it doesn't drift. Browsers only allow sound after a tap: audio is unlocked inside the Start click. Background tabs may throttle the 100 ms interval to ~1 s, so a beep can be up to a second late when the screen is off (Wake Lock keeps the screen on while running where supported).
+- JS tests (Node 22, no dependencies): `node --test "tests/js/*.test.mjs"` (timer logic). Python tests don't cover JS.
 - NOT built (ask the owner if wanted): Rx vs Scaled for WODs. Right now scaled and Rx times are compared directly; people can note "scaled" in the note field.
 - Tests: `docker compose run --rm app pytest -q` (51 tests, use a throw-away `crossfit_test` DB). Run after backend changes. Test dates must not be in the future (the API rejects dates > tomorrow).
 

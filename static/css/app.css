@@ -78,7 +78,7 @@ body.logged-out .topbar::after { display: none; }
 .top-actions { display: flex; gap: 8px; margin-inline-start: auto; }
 
 .chip {
-  min-height: 36px; padding: 0 14px;
+  min-height: 36px; padding: 0 14px; white-space: nowrap;
   border: 1px solid var(--line); border-radius: 999px;
   background: var(--panel); color: var(--text);
   font: 600 0.85rem var(--body); cursor: pointer;
@@ -89,15 +89,16 @@ body.logged-out .topbar::after { display: none; }
 
 .tabbar {
   position: fixed; inset-inline: 0; bottom: 0; z-index: 10;
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(4, 1fr);
   background: var(--panel); border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
 }
 .tabbar a {
   display: grid; place-items: center; min-height: 56px;
   text-decoration: none; color: var(--muted);
-  font-family: var(--display); font-weight: 800; font-size: 1rem;
-  letter-spacing: 0.04em; text-transform: uppercase; text-align: center; padding-inline: 4px;
+  font-family: var(--display); font-weight: 800; font-size: clamp(0.8rem, 3.5vw, 1rem);
+  letter-spacing: 0.03em; text-transform: uppercase; text-align: center; padding-inline: 2px;
+  position: relative;
   border-top: 3px solid transparent;
 }
 .tabbar a[aria-current] { color: var(--text); border-top-color: var(--accent); background: var(--panel-2); }
@@ -288,6 +289,47 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
 #toast.show { opacity: 1; transform: none; }
 dialog[open] ~ #toast { bottom: 24px; }
 
+/* ---------- workout timer ---------- */
+
+.tab-dot {
+  position: absolute; top: 10px; inset-inline-end: 12%;
+  width: 9px; height: 9px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite;
+}
+.icon-chip { display: inline-flex; align-items: center; gap: 6px; }
+.icon-chip .icon { width: 1.1em; height: 1.1em; }
+.seg-group.modes { grid-template-columns: repeat(2, 1fr); margin-bottom: 10px; }
+@media (min-width: 520px) { .seg-group.modes { grid-template-columns: repeat(4, 1fr); } }
+.mode-help { color: var(--muted); font-size: 0.9rem; margin-bottom: 12px; }
+.timer-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 18px; }
+
+.timer-face {
+  display: grid; justify-items: center; gap: 6px; padding: 22px 14px 18px; margin-bottom: 14px;
+  background: var(--panel); border: 2px solid var(--line); border-radius: 16px;
+  --tone: var(--muted); border-color: var(--tone);
+  box-shadow: 0 0 40px -12px var(--tone);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.timer-face[data-state="prep"] { --tone: #ffd54a; }
+.timer-face[data-state="work"] { --tone: var(--accent); }
+.timer-face[data-state="rest"] { --tone: #3fd0a0; }
+.timer-face[data-state="up"] { --tone: var(--accent-2); }
+.timer-face[data-state="done"] { --tone: #ffd54a; }
+.timer-phase { font: 800 1.5rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--tone); }
+.timer-clock { display: flex; align-items: baseline; justify-content: center; direction: ltr; }
+.timer-time { font: 400 clamp(4.2rem, 25vw, 9rem)/1 var(--display); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.tenths { font: 400 clamp(1.6rem, 8vw, 3rem) var(--display); color: var(--muted); min-width: 2ch; }
+.timer-sub { min-height: 1.4em; color: var(--muted); font-weight: 700; text-align: center; }
+.timer-bar { width: 100%; height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+.timer-bar i { display: block; height: 100%; background: var(--tone); transform-origin: left; transform: scaleX(0); transition: transform 0.12s linear; }
+.timer-face[data-paused] .timer-time { animation: blink 1s steps(2, start) infinite; }
+
+.timer-rounds { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin-bottom: 14px; }
+.rounds-count { display: grid; justify-items: center; }
+.rounds-count small { color: var(--muted); }
+.rounds-count b { font-size: 2.6rem; }
+.timer-actions { display: grid; gap: 10px; }
+.btn.big { min-height: 64px; font-size: 1.4rem; }
+
 /* ---------- leaderboard ---------- */
 
 .board-banner {
@@ -407,6 +449,8 @@ dialog[open] ~ #toast { bottom: 24px; }
 .pr-ring { position: absolute; left: 0; top: 0; width: 40px; height: 40px; margin: -20px 0 0 -20px; border: 4px solid #ffd54a; border-radius: 50%; animation: ring 0.9s 0.62s ease-out both; }
 .pr-ring.r2 { border-color: var(--accent); animation-delay: 0.78s; }
 
+@keyframes pulse { 50% { opacity: 0.25; transform: scale(0.75); } }
+@keyframes blink { to { opacity: 0.25; } }
 @keyframes fade { from { opacity: 0; } }
 @keyframes drop { from { transform: translateY(-110vh) rotate(-8deg); } }
 @keyframes slam { from { opacity: 0; transform: scale(2.6); } }

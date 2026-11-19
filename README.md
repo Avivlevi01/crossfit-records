@@ -24,6 +24,12 @@ Friends register with the `INVITE_CODE` from `.env`.
 docker compose run --rm app pytest -q
 ```
 
+Timer logic tests (needs Node 22+, no packages to install):
+
+```bash
+node --test "tests/js/*.test.mjs"
+```
+
 ## Owner commands
 
 ```bash

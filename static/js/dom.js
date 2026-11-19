@@ -10,6 +10,11 @@ const ICONS = {
   plus: '<path d="M12 5v14M5 12h14"/>',
   back: '<path d="M15 5l-7 7 7 7"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  play: '<path d="M7 4l13 8-13 8V4z"/>',
+  pause: '<path d="M8 5v14M16 5v14"/>',
+  reset: '<path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/>',
+  volume: '<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',
+  mute: '<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/>',
   chart: '<path d="M4 4v16h16"/><path d="M7 15l4-4 3 3 5-6"/>',
   trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M8 6H5v1a3 3 0 0 0 3 3M16 6h3v1a3 3 0 0 1-3 3M12 13v4M8.5 20h7M10 17h4"/>',
 };
