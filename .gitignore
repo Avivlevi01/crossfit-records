@@ -8,3 +8,6 @@ __pycache__/
 .venv/
 .pytest_cache/
 .claude/
+
+# Local assistant notes (contain account/project IDs): never publish
+CLAUDE.md
