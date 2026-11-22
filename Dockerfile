@@ -36,9 +36,9 @@ USER app
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"
+  CMD python -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/api/health' % os.environ.get('PORT', '8000'), timeout=3)"
 
-# Applies database migrations, then starts the app. --proxy-headers: the app sits behind the
-# Caddy proxy, so the visitor's real IP comes from the X-Forwarded-For header (needed by the
-# login rate limit). Safe here because the app is only reachable through the proxy.
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*' --no-server-header"]
+# Applies database migrations, then starts the app. The port comes from $PORT (Cloud Run sets it,
+# default 8000 for Docker Compose). The visitor's real IP is read in app/ratelimit.py from
+# X-Forwarded-For using TRUSTED_PROXY_HOPS, so uvicorn's own proxy-header trust is NOT used.
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --no-server-header"]

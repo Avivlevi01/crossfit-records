@@ -9,6 +9,8 @@ from collections import defaultdict, deque
 
 from fastapi import HTTPException, Request
 
+from app.config import settings
+
 
 class FailureLimiter:
     def __init__(self, max_failures: int, window_seconds: int):
@@ -49,4 +51,12 @@ invite_by_ip = FailureLimiter(max_failures=8, window_seconds=15 * 60)
 
 
 def client_ip(request: Request) -> str:
+    """The visitor's address. Behind N trusted proxies each one appends the address it saw to
+    X-Forwarded-For, so the real visitor is the Nth entry from the RIGHT. Anything further left
+    was typed by the visitor and can be forged, so it is never used."""
+    hops = settings.trusted_proxy_hops
+    if hops > 0:
+        parts = [p.strip() for p in request.headers.get("x-forwarded-for", "").split(",") if p.strip()]
+        if len(parts) >= hops:
+            return parts[-hops]
     return request.client.host if request.client else "unknown"
