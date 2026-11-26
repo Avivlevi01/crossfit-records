@@ -4,7 +4,7 @@ The rule everywhere: any logged-in user may READ; only the owner may CHANGE his 
 """
 
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select, tuple_
@@ -48,7 +48,7 @@ def _validate_for_exercise(data: RecordIn, exercise: Exercise) -> None:
             problems.append(f"{field} is not used for {exercise.name}")
     if problems:
         raise HTTPException(422, "; ".join(problems))
-    if data.performed_on > datetime.now(timezone.utc).date() + timedelta(days=1):
+    if data.performed_on > datetime.now(UTC).date() + timedelta(days=1):
         raise HTTPException(422, "Date can't be in the future")
 
 
@@ -106,7 +106,11 @@ def _serialize(db: Session, records: list[Record], saved_id: int | None = None) 
                 performed_on=r.performed_on,
                 note=r.note,
                 comment_count=counts.get(r.id, 0),
-                est_1rm=pr.est_1rm(r.weight_kg, r.reps) if r.exercise.kind == ExerciseKind.WEIGHT_REPS.value else None,
+                est_1rm=(
+                    pr.est_1rm(r.weight_kg, r.reps)
+                    if r.exercise.kind == ExerciseKind.WEIGHT_REPS.value
+                    else None
+                ),
                 is_pr=is_pr,
                 is_current_pr=is_current,
                 celebration=celebration,

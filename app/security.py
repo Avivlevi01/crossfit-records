@@ -7,7 +7,7 @@
 """
 
 import hashlib
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from argon2 import PasswordHasher
@@ -44,7 +44,7 @@ def create_session_token(user_id: int, password_hash: str) -> str:
     payload = {
         "sub": str(user_id),
         "pv": _fingerprint(password_hash),
-        "exp": datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS),
+        "exp": datetime.now(UTC) + timedelta(days=SESSION_DAYS),
     }
     return jwt.encode(payload, settings.secret_key, algorithm="HS256")
 

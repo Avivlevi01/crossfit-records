@@ -26,7 +26,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
-class ExerciseKind(str, enum.Enum):
+class ExerciseKind(str, enum.Enum):  # noqa: UP042 (StrEnum would change what str() returns)
     """What an exercise measures. Decides which record fields are used."""
 
     WEIGHT_REPS = "weight_reps"      # Back Squat: weight_kg + reps

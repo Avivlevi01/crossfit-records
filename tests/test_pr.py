@@ -106,7 +106,12 @@ def test_editing_a_record_into_a_pr_celebrates(user_client):
     light = squat(c, "2026-11-08", 80)
     r = c.put(
         f"/api/records/{light['id']}",
-        json={"exercise_id": light["exercise"]["id"], "weight_kg": 105, "reps": 1, "performed_on": "2026-11-08"},
+        json={
+            "exercise_id": light["exercise"]["id"],
+            "weight_kg": 105,
+            "reps": 1,
+            "performed_on": "2026-11-08",
+        },
     )
     assert r.json()["celebration"]["type"] == "new"
 

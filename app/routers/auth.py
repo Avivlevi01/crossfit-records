@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import ratelimit
+from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
@@ -17,7 +18,6 @@ from app.security import (
     set_session_cookie,
     verify_password,
 )
-from app.config import settings
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -45,7 +45,7 @@ def register(data: RegisterIn, request: Request, response: Response, db: Session
         db.commit()
     except IntegrityError:  # two people registering the same name at the same moment
         db.rollback()
-        raise HTTPException(409, "Username already taken")
+        raise HTTPException(409, "Username already taken") from None
 
     set_session_cookie(response, user.id, user.password_hash)
     return user

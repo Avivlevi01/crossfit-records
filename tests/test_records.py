@@ -45,8 +45,9 @@ def test_values_must_match_exercise_kind(user_client):
     assert c.post("/api/records", json={**base, "reps": 12}).status_code == 201
     assert c.post("/api/records", json={**base, "reps": 12, "weight_kg": 10}).status_code == 422
     fran = exercise_id(c, "Fran")
-    assert c.post("/api/records", json={"exercise_id": fran, "performed_on": "2026-11-01", "time_seconds": 245.5}).status_code == 201
-    assert c.post("/api/records", json={"exercise_id": fran, "performed_on": "2026-11-01", "reps": 3}).status_code == 422
+    run = {"exercise_id": fran, "performed_on": "2026-11-01"}
+    assert c.post("/api/records", json={**run, "time_seconds": 245.5}).status_code == 201
+    assert c.post("/api/records", json={**run, "reps": 3}).status_code == 422
 
 
 def test_rejects_bad_numbers_and_future_dates(user_client):
@@ -87,7 +88,8 @@ def test_history_is_newest_first_and_filterable(user_client):
     c = user_client("aviv")
     squat(c, performed_on="2026-10-01", weight_kg=90)
     squat(c, performed_on="2026-11-01", weight_kg=100)
-    c.post("/api/records", json={"exercise_id": exercise_id(c, "Deadlift"), "weight_kg": 150, "reps": 1, "performed_on": "2026-11-05"})
+    deadlift = {"exercise_id": exercise_id(c, "Deadlift"), "weight_kg": 150, "reps": 1}
+    c.post("/api/records", json={**deadlift, "performed_on": "2026-11-05"})
     uid = c.get("/api/auth/me").json()["id"]
     all_ = c.get(f"/api/users/{uid}/records").json()
     assert [r["performed_on"] for r in all_] == ["2026-11-05", "2026-11-01", "2026-10-01"]
@@ -158,7 +160,8 @@ def test_seed_refreshes_descriptions_of_existing_defaults(user_client, db_sessio
 
 def test_custom_exercise_description(user_client):
     c = user_client("aviv")
-    made = c.post("/api/exercises", json={"name": "Farmers 200", "kind": "time", "description": "  200 m with 2x24 kg  "})
+    body = {"name": "Farmers 200", "kind": "time", "description": "  200 m with 2x24 kg  "}
+    made = c.post("/api/exercises", json=body)
     assert made.status_code == 201 and made.json()["description"] == "200 m with 2x24 kg"
     blank = c.post("/api/exercises", json={"name": "No desc", "kind": "time", "description": "   "})
     assert blank.json()["description"] is None
@@ -175,5 +178,6 @@ def test_custom_exercises(user_client):
     eid = made.json()["id"]
     assert b.delete(f"/api/exercises/{eid}").status_code == 403        # not the creator
     assert a.delete(f"/api/exercises/{exercise_id(a, 'Back Squat')}").status_code == 403   # default
-    a.post("/api/records", json={"exercise_id": eid, "weight_kg": 60, "reps": 5, "performed_on": "2026-11-01"})
+    squats = {"exercise_id": eid, "weight_kg": 60, "reps": 5}
+    a.post("/api/records", json={**squats, "performed_on": "2026-11-01"})
     assert a.delete(f"/api/exercises/{eid}").status_code == 409        # already used

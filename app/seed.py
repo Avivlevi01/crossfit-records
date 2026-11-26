@@ -67,7 +67,10 @@ DESCRIPTIONS: dict[str, str] = {
     "Grace": "30 Clean & Jerks for time (61/43 kg)",
     "Helen": "3 rounds for time: 400 m run, 21 Kettlebell swings (24/16 kg), 12 Pull-ups",
     "Karen": "150 Wall Balls for time (9/6 kg)",
-    "Murph": "For time: 1 mile run, 100 Pull-ups, 200 Push-ups, 300 Air squats, 1 mile run (optional 9/6 kg vest)",
+    "Murph": (
+        "For time: 1 mile run, 100 Pull-ups, 200 Push-ups, 300 Air squats, 1 mile run "
+        "(optional 9/6 kg vest)"
+    ),
     "Run (any distance)": "Log the distance and your time; the pace is calculated for you",
     "Hyrox SkiErg 1 km": "1000 m on the SkiErg",
     "Hyrox Sled Push": "50 m sled push (weight depends on your division)",
@@ -77,7 +80,10 @@ DESCRIPTIONS: dict[str, str] = {
     "Hyrox Farmers Carry": "200 m farmers carry (weight depends on your division)",
     "Hyrox Sandbag Lunges": "100 m sandbag lunges (weight depends on your division)",
     "Hyrox Wall Balls": "100 Wall Balls (weight depends on your division)",
-    "Hyrox Full Race": "8 x 1 km run, each followed by a station: SkiErg, sled push, sled pull, burpee broad jumps, row, farmers carry, sandbag lunges, wall balls",
+    "Hyrox Full Race": (
+        "8 x 1 km run, each followed by a station: SkiErg, sled push, sled pull, burpee broad "
+        "jumps, row, farmers carry, sandbag lunges, wall balls"
+    ),
 }
 
 
@@ -88,7 +94,15 @@ def seed_default_exercises(db: Session) -> int:
     for category, name, kind in DEFAULT_EXERCISES:
         found = existing.get(name.lower())
         if found is None:
-            db.add(Exercise(name=name, category=category, kind=kind.value, is_default=True, description=DESCRIPTIONS.get(name)))
+            db.add(
+                Exercise(
+                    name=name,
+                    category=category,
+                    kind=kind.value,
+                    is_default=True,
+                    description=DESCRIPTIONS.get(name),
+                )
+            )
             added += 1
         elif found.is_default and found.description != DESCRIPTIONS.get(name):
             found.description = DESCRIPTIONS.get(name)

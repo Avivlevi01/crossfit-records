@@ -64,7 +64,11 @@ def leaderboard(exercise_id: int, db: Session = Depends(get_db), _: User = Depen
                 user_id=r.user_id,
                 username=r.user.username,
                 performed_on=r.performed_on,
-                est_1rm=pr.est_1rm(r.weight_kg, r.reps) if exercise.kind == ExerciseKind.WEIGHT_REPS.value else None,
+                est_1rm=(
+                    pr.est_1rm(r.weight_kg, r.reps)
+                    if exercise.kind == ExerciseKind.WEIGHT_REPS.value
+                    else None
+                ),
             )
         )
     return LeaderboardOut(exercise=ExerciseOut.model_validate(exercise), entries=entries)

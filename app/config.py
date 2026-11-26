@@ -32,7 +32,8 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _no_placeholders_in_production(self):
         """Refuse to start in production with the example values still in place."""
-        if self.cookie_secure and "change-me" in (self.secret_key + self.invite_code + self.database_url).lower():
+        values = self.secret_key + self.invite_code + self.database_url
+        if self.cookie_secure and "change-me" in values.lower():
             raise ValueError("Production settings still contain a 'CHANGE-ME' placeholder: edit your .env")
         return self
 

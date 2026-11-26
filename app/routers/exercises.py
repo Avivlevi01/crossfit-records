@@ -37,7 +37,7 @@ def create_exercise(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(409, "An exercise with this name already exists")
+        raise HTTPException(409, "An exercise with this name already exists") from None
     return ex
 
 
