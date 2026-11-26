@@ -5,6 +5,8 @@ on:
     branches: [main, add-ci]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *" # every night, 03:17 UTC (05:17 in Israel in winter, 06:17 in summer)
 
 jobs:
   test:

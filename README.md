@@ -7,6 +7,7 @@
 **A private personal-records tracker for a group of friends.**
 Log every lift and benchmark, watch your progress, and see who is leading the board.
 
+[![CI](https://github.com/Avivlevi01/crossfit-records/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Avivlevi01/crossfit-records/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
