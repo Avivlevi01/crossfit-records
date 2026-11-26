@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 540" role="img" aria-labelledby="t d">
+<title id="t">The CI workout: what GitHub runs on every push</title>
+<desc id="d">Five stations light up in order: push, setup of a clean Linux machine with PostgreSQL, ruff lint, 63 pytest tests and 15 JavaScript timer tests. When all pass the run is green. Cloud Build deploys in parallel and is not blocked by the tests.</desc>
+<style>
+text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;text-anchor:middle}
+.d{font-family:Impact,Haettenschweiler,"Arial Narrow Bold","Arial Black",sans-serif;letter-spacing:1.5px}
+.c{transform-box:fill-box;transform-origin:center}
+@keyframes bar{0%{stroke-dashoffset:920}8%{stroke-dashoffset:920}14%{stroke-dashoffset:920}22%{stroke-dashoffset:690}28%{stroke-dashoffset:690}38%{stroke-dashoffset:460}44%{stroke-dashoffset:460}54%{stroke-dashoffset:230}60%{stroke-dashoffset:230}70%{stroke-dashoffset:0}94%{stroke-dashoffset:0}100%{stroke-dashoffset:920}}
+@keyframes plate{0%{transform:translateX(0px);opacity:0}3%{transform:translateX(0px);opacity:1}8%{transform:translateX(0px);opacity:1}14%{transform:translateX(0px);opacity:1}22%{transform:translateX(230px);opacity:1}28%{transform:translateX(230px);opacity:1}38%{transform:translateX(460px);opacity:1}44%{transform:translateX(460px);opacity:1}54%{transform:translateX(690px);opacity:1}60%{transform:translateX(690px);opacity:1}70%{transform:translateX(920px);opacity:1}73%{transform:translateX(920px);opacity:0}100%{transform:translateX(0px);opacity:0}}
+.bar{stroke-dasharray:920;animation:bar 11s ease-in-out infinite}
+.plate{opacity:0;animation:plate 11s ease-in-out infinite}
+@keyframes on1{0%{opacity:0}7%{opacity:0}11%{opacity:1}94%{opacity:1}100%{opacity:0}}
+.on1{animation:on1 11s ease-out infinite}
+@keyframes pop1{0%{opacity:0;transform:scale(0)}8%{opacity:0;transform:scale(0)}12%{opacity:1;transform:scale(1)}94%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0)}}
+.pop1{animation:pop1 11s ease-out infinite}
+@keyframes ring1{0%{opacity:0;transform:scale(1)}7%{opacity:0;transform:scale(1)}8%{opacity:.9;transform:scale(1)}17%{opacity:0;transform:scale(1.55)}100%{opacity:0;transform:scale(1.55)}}
+.ring1{opacity:0;animation:ring1 11s ease-out infinite}
+@keyframes on2{0%{opacity:0}21%{opacity:0}25%{opacity:1}94%{opacity:1}100%{opacity:0}}
+.on2{animation:on2 11s ease-out infinite}
+@keyframes pop2{0%{opacity:0;transform:scale(0)}22%{opacity:0;transform:scale(0)}26%{opacity:1;transform:scale(1)}94%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0)}}
+.pop2{animation:pop2 11s ease-out infinite}
+@keyframes ring2{0%{opacity:0;transform:scale(1)}21%{opacity:0;transform:scale(1)}22%{opacity:.9;transform:scale(1)}31%{opacity:0;transform:scale(1.55)}100%{opacity:0;transform:scale(1.55)}}
+.ring2{opacity:0;animation:ring2 11s ease-out infinite}
+@keyframes on3{0%{opacity:0}37%{opacity:0}41%{opacity:1}94%{opacity:1}100%{opacity:0}}
+.on3{animation:on3 11s ease-out infinite}
+@keyframes pop3{0%{opacity:0;transform:scale(0)}38%{opacity:0;transform:scale(0)}42%{opacity:1;transform:scale(1)}94%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0)}}
+.pop3{animation:pop3 11s ease-out infinite}
+@keyframes ring3{0%{opacity:0;transform:scale(1)}37%{opacity:0;transform:scale(1)}38%{opacity:.9;transform:scale(1)}47%{opacity:0;transform:scale(1.55)}100%{opacity:0;transform:scale(1.55)}}
+.ring3{opacity:0;animation:ring3 11s ease-out infinite}
+@keyframes on4{0%{opacity:0}53%{opacity:0}57%{opacity:1}94%{opacity:1}100%{opacity:0}}
+.on4{animation:on4 11s ease-out infinite}
+@keyframes pop4{0%{opacity:0;transform:scale(0)}54%{opacity:0;transform:scale(0)}58%{opacity:1;transform:scale(1)}94%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0)}}
+.pop4{animation:pop4 11s ease-out infinite}
+@keyframes ring4{0%{opacity:0;transform:scale(1)}53%{opacity:0;transform:scale(1)}54%{opacity:.9;transform:scale(1)}63%{opacity:0;transform:scale(1.55)}100%{opacity:0;transform:scale(1.55)}}
+.ring4{opacity:0;animation:ring4 11s ease-out infinite}
+@keyframes on5{0%{opacity:0}69%{opacity:0}73%{opacity:1}94%{opacity:1}100%{opacity:0}}
+.on5{animation:on5 11s ease-out infinite}
+@keyframes pop5{0%{opacity:0;transform:scale(0)}70%{opacity:0;transform:scale(0)}74%{opacity:1;transform:scale(1)}94%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0)}}
+.pop5{animation:pop5 11s ease-out infinite}
+@keyframes ring5{0%{opacity:0;transform:scale(1)}69%{opacity:0;transform:scale(1)}70%{opacity:.9;transform:scale(1)}79%{opacity:0;transform:scale(1.55)}100%{opacity:0;transform:scale(1.55)}}
+.ring5{opacity:0;animation:ring5 11s ease-out infinite}
+@keyframes stamp{0%{opacity:0;transform:scale(1.8)}77%{opacity:0;transform:scale(1.8)}81%{opacity:1;transform:scale(1)}94%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.8)}}
+.stamp{animation:stamp 11s ease-out infinite}
+@keyframes spark0{0%{opacity:0;transform:translate(0px,0px)}80%{opacity:0;transform:translate(0px,0px)}81%{opacity:1;transform:translate(0px,0px)}92%{opacity:0;transform:translate(-250px,-26px)}100%{opacity:0;transform:translate(0px,0px)}}
+.spark0{opacity:0;animation:spark0 11s ease-out infinite}
+@keyframes spark1{0%{opacity:0;transform:translate(0px,0px)}80%{opacity:0;transform:translate(0px,0px)}81%{opacity:1;transform:translate(0px,0px)}92%{opacity:0;transform:translate(-215px,30px)}100%{opacity:0;transform:translate(0px,0px)}}
+.spark1{opacity:0;animation:spark1 11s ease-out infinite}
+@keyframes spark2{0%{opacity:0;transform:translate(0px,0px)}80%{opacity:0;transform:translate(0px,0px)}81%{opacity:1;transform:translate(0px,0px)}92%{opacity:0;transform:translate(-180px,-48px)}100%{opacity:0;transform:translate(0px,0px)}}
+.spark2{opacity:0;animation:spark2 11s ease-out infinite}
+@keyframes spark3{0%{opacity:0;transform:translate(0px,0px)}80%{opacity:0;transform:translate(0px,0px)}81%{opacity:1;transform:translate(0px,0px)}92%{opacity:0;transform:translate(-135px,44px)}100%{opacity:0;transform:translate(0px,0px)}}
+.spark3{opacity:0;animation:spark3 11s ease-out infinite}
+@keyframes spark4{0%{opacity:0;transform:translate(0px,0px)}80%{opacity:0;transform:translate(0px,0px)}81%{opacity:1;transform:translate(0px,0px)}92%{opacity:0;transform:translate(140px,42px)}100%{opacity:0;transform:translate(0px,0px)}}
+.spark4{opacity:0;animation:spark4 11s ease-out infinite}
+@keyframes spark5{0%{opacity:0;transform:translate(0px,0px)}80%{opacity:0;transform:translate(0px,0px)}81%{opacity:1;transform:translate(0px,0px)}92%{opacity:0;transform:translate(185px,-46px)}100%{opacity:0;transform:translate(0px,0px)}}
+.spark5{opacity:0;animation:spark5 11s ease-out infinite}
+@keyframes spark6{0%{opacity:0;transform:translate(0px,0px)}80%{opacity:0;transform:translate(0px,0px)}81%{opacity:1;transform:translate(0px,0px)}92%{opacity:0;transform:translate(220px,28px)}100%{opacity:0;transform:translate(0px,0px)}}
+.spark6{opacity:0;animation:spark6 11s ease-out infinite}
+@keyframes spark7{0%{opacity:0;transform:translate(0px,0px)}80%{opacity:0;transform:translate(0px,0px)}81%{opacity:1;transform:translate(0px,0px)}92%{opacity:0;transform:translate(255px,-22px)}100%{opacity:0;transform:translate(0px,0px)}}
+.spark7{opacity:0;animation:spark7 11s ease-out infinite}
+@keyframes moon{0%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}100%{transform:rotate(-12deg)}}
+.moon{animation:moon 5s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<rect width="1200" height="540" rx="24" fill="#0b0a0d"/>
+<rect x="1.5" y="1.5" width="1197" height="537" rx="23" fill="none" stroke="#2c2735" stroke-width="3"/>
+<text class="d" x="600" y="72" font-size="50" fill="#f3efe9">EVERY PUSH DOES A <tspan fill="#ff4d2e">WORKOUT</tspan></text>
+<text x="600" y="112" font-size="22" fill="#a39cb0">GitHub Actions on every push to main, every pull request and every night</text>
+<g transform="translate(1110 62)"><g class="c moon"><path d="M8 -22A24 24 0 1 0 22 12A19 19 0 0 1 8 -22Z" fill="#ffc93c"/></g></g>
+<path d="M140 226H1060" stroke="#2c2735" stroke-width="8" stroke-linecap="round"/>
+<path class="bar" d="M140 226H1060" stroke="#3ddc84" stroke-width="8" stroke-linecap="round"/>
+<g transform="translate(140 226)">
+  <circle class="c ring1" r="58" fill="none" stroke="#3ddc84" stroke-width="4"/>
+  <circle r="58" fill="#15121a" stroke="#2c2735" stroke-width="4"/>
+  <circle class="on1" r="58" fill="none" stroke="#3ddc84" stroke-width="5"/>
+  <g fill="none" stroke="#f3efe9" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M0 22V-18M-17 -1L0 -19L17 -1"/></g>
+  <g transform="translate(42 -42)"><g class="c pop1">
+    <circle r="19" fill="#3ddc84" stroke="#0b0a0d" stroke-width="4"/>
+    <path d="M-8 0L-2 6L9 -6" fill="none" stroke="#0b0a0d" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g></g>
+  <text class="d" y="104" font-size="32" fill="#f3efe9">PUSH</text>
+  <text y="134" font-size="20" fill="#a39cb0">your commit</text>
+</g>
+<g transform="translate(370 226)">
+  <circle class="c ring2" r="58" fill="none" stroke="#3ddc84" stroke-width="4"/>
+  <circle r="58" fill="#15121a" stroke="#2c2735" stroke-width="4"/>
+  <circle class="on2" r="58" fill="none" stroke="#3ddc84" stroke-width="5"/>
+  <g fill="none" stroke="#f3efe9" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="0" cy="-15" rx="21" ry="8"/><path d="M-21 -15V15C-21 19 -12 23 0 23S21 19 21 15V-15M-21 0C-21 4 -12 8 0 8S21 4 21 0"/></g>
+  <g transform="translate(42 -42)"><g class="c pop2">
+    <circle r="19" fill="#3ddc84" stroke="#0b0a0d" stroke-width="4"/>
+    <path d="M-8 0L-2 6L9 -6" fill="none" stroke="#0b0a0d" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g></g>
+  <text class="d" y="104" font-size="32" fill="#f3efe9">SETUP</text>
+  <text y="134" font-size="20" fill="#a39cb0">clean Linux + Postgres</text>
+</g>
+<g transform="translate(600 226)">
+  <circle class="c ring3" r="58" fill="none" stroke="#3ddc84" stroke-width="4"/>
+  <circle r="58" fill="#15121a" stroke="#2c2735" stroke-width="4"/>
+  <circle class="on3" r="58" fill="none" stroke="#3ddc84" stroke-width="5"/>
+  <g fill="none" stroke="#f3efe9" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="-5" cy="-5" r="16"/><path d="M7 7L21 21"/></g>
+  <g transform="translate(42 -42)"><g class="c pop3">
+    <circle r="19" fill="#3ddc84" stroke="#0b0a0d" stroke-width="4"/>
+    <path d="M-8 0L-2 6L9 -6" fill="none" stroke="#0b0a0d" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g></g>
+  <text class="d" y="104" font-size="32" fill="#f3efe9">LINT</text>
+  <text y="134" font-size="20" fill="#a39cb0">ruff check</text>
+</g>
+<g transform="translate(830 226)">
+  <circle class="c ring4" r="58" fill="none" stroke="#3ddc84" stroke-width="4"/>
+  <circle r="58" fill="#15121a" stroke="#2c2735" stroke-width="4"/>
+  <circle class="on4" r="58" fill="none" stroke="#3ddc84" stroke-width="5"/>
+  <g fill="none" stroke="#f3efe9" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M-9 -22H9M-6 -22V-6L-20 17C-22 21 -19 23 -15 23H15C19 23 22 21 20 17L6 -6V-22M-13 8H13"/></g>
+  <g transform="translate(42 -42)"><g class="c pop4">
+    <circle r="19" fill="#3ddc84" stroke="#0b0a0d" stroke-width="4"/>
+    <path d="M-8 0L-2 6L9 -6" fill="none" stroke="#0b0a0d" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g></g>
+  <text class="d" y="104" font-size="32" fill="#f3efe9">TESTS</text>
+  <text y="134" font-size="20" fill="#a39cb0">63 pytest</text>
+</g>
+<g transform="translate(1060 226)">
+  <circle class="c ring5" r="58" fill="none" stroke="#3ddc84" stroke-width="4"/>
+  <circle r="58" fill="#15121a" stroke="#2c2735" stroke-width="4"/>
+  <circle class="on5" r="58" fill="none" stroke="#3ddc84" stroke-width="5"/>
+  <g fill="none" stroke="#f3efe9" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="0" cy="4" r="19"/><path d="M0 4V-8M0 4L9 9M-6 -23H6M0 -23V-15"/></g>
+  <g transform="translate(42 -42)"><g class="c pop5">
+    <circle r="19" fill="#3ddc84" stroke="#0b0a0d" stroke-width="4"/>
+    <path d="M-8 0L-2 6L9 -6" fill="none" stroke="#0b0a0d" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g></g>
+  <text class="d" y="104" font-size="32" fill="#f3efe9">TIMER</text>
+  <text y="134" font-size="20" fill="#a39cb0">15 JavaScript</text>
+</g>
+<g class="plate"><g transform="translate(140 226)">
+  <circle r="15" fill="#ff4d2e" stroke="#f3efe9" stroke-width="3"/><circle r="4" fill="#0b0a0d"/>
+</g></g>
+<g transform="translate(600 432)">
+  <rect class="spark0" x="-6" y="-6" width="12" height="12" rx="3" fill="#ffc93c"/><rect class="spark1" x="-6" y="-6" width="12" height="12" rx="3" fill="#ff4d2e"/><rect class="spark2" x="-6" y="-6" width="12" height="12" rx="3" fill="#3ddc84"/><rect class="spark3" x="-6" y="-6" width="12" height="12" rx="3" fill="#ffc93c"/><rect class="spark4" x="-6" y="-6" width="12" height="12" rx="3" fill="#ff4d2e"/><rect class="spark5" x="-6" y="-6" width="12" height="12" rx="3" fill="#3ddc84"/><rect class="spark6" x="-6" y="-6" width="12" height="12" rx="3" fill="#ffc93c"/><rect class="spark7" x="-6" y="-6" width="12" height="12" rx="3" fill="#ff4d2e"/>
+  <g class="c stamp">
+    <rect x="-150" y="-34" width="300" height="68" rx="34" fill="#3ddc84"/>
+    <text class="d" y="13" font-size="36" fill="#0b0a0d">&#10003; ALL GREEN</text>
+  </g>
+</g>
+<text x="600" y="510" font-size="20" fill="#a39cb0">Cloud Build deploys in parallel: the checks report problems, they do not block a release.</text>
+</svg>

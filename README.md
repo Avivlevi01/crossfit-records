@@ -54,6 +54,40 @@ Log every lift and benchmark, watch your progress, and see who is leading the bo
 
 ---
 
+## 🤖 Automated quality checks (CI)
+
+<div align="center">
+
+<img src="docs/ci-pipeline.svg" alt="Animated CI run: push, clean setup with PostgreSQL, ruff lint, 63 pytest tests, 15 JavaScript timer tests, all green" width="100%">
+
+<sub>Illustration of the pipeline. The live result is the <b>CI</b> badge at the top of this page.</sub>
+
+</div>
+
+GitHub starts a **clean machine** and checks the whole project on every push to `main`, on every pull request, and **every night** (03:17 UTC). The steps run in order and the first failure stops the run.
+
+| Station | What runs | What it catches |
+|---|---|---|
+| 📤 **Push** | The workflow in [`ci.yml`](.github/workflows/ci.yml) starts | |
+| 🧱 **Setup** | Fresh Ubuntu, PostgreSQL 17, Python 3.13 and the dependencies | "Works only on my computer" problems |
+| 🔍 **Lint** | `ruff check .` | Real mistakes, risky patterns, messy imports |
+| 🧪 **Tests** | 63 `pytest` tests against a real database | Broken permissions, validation, login limits and PR logic |
+| ⏱️ **Timer** | 15 JavaScript tests (Node 22) | Wrong phases, sounds or clock formatting in the workout timer |
+
+<details>
+<summary><b>Why it is built this way</b></summary>
+<br>
+
+- **Lint before tests:** it needs no database, so the cheapest failure shows up first.
+- **A real PostgreSQL, not a substitute:** the same major version as local development.
+- **Made-up settings in the workflow:** the database is thrown away after each run, and no real secret is in the repository.
+- **A nightly run:** it can reveal breakage from a new library release even when nobody changed the code.
+- **What it does not do:** Cloud Build deploys on its own, so a red run is a warning and does not block a release. The browser screens have no automated tests.
+
+</details>
+
+---
+
 ## 🏗️ Architecture
 
 The app is deliberately simple: **one container** that serves both the API and the front-end, talking to **one PostgreSQL database**. Everything else (HTTPS, scaling, deploys) is handled by the platform.
@@ -82,7 +116,7 @@ flowchart LR
 | **Database apart from the app** | The container is stateless and can be replaced or restarted at any time. Only the database holds data. | One more thing to secure and back up. |
 | **Docker (multi-stage)** | Identical environment on a laptop and in the cloud. The production image runs as a non-root user. | Needs Docker to develop. |
 | **Cloud Run + Neon** | Scales to zero, so a hobby app costs close to nothing. HTTPS is included. | A cold start of a few seconds after idle. Free tiers can change. |
-| **Push to deploy** | Every push to `main` builds and releases by itself. | The pipeline does not run the tests yet. |
+| **Push to deploy** | Every push to `main` builds and releases by itself. | The tests run in a separate pipeline that does not block the release. |
 
 ### Data model
 
@@ -171,7 +205,10 @@ Migrations run automatically on start (`alembic upgrade head`) and the default e
 ```bash
 docker compose run --rm app pytest -q          # API: permissions, validation, login limits, PR logic
 node --test "tests/js/*.test.mjs"              # timer logic (Node 22+, nothing to install)
+docker compose run --rm --build app ruff check .  # lint (settings in ruff.toml)
 ```
+
+The same checks run automatically, see [Automated quality checks](#-automated-quality-checks-ci).
 
 ## ☁️ Deployment
 
@@ -218,8 +255,10 @@ app/            FastAPI code
 alembic/        database migrations
 static/         front-end: index.html, css/, js/ (i18n, chart, timer...), logo.svg
 tests/          pytest API tests + Node timer tests
+.github/        CI workflow (GitHub Actions)
+ruff.toml       lint settings
 scripts/        backup / restore (VPS and Neon)
-docs/           README screenshots
+docs/           README screenshots and the CI animation
 ```
 
 ---
@@ -233,6 +272,8 @@ docs/           README screenshots
 **שיאים בקרוספיט** הוא אתר פרטי לחברים: רושמים שיאים (משקל, חזרות, זמן, מרחק), רואים גרף התקדמות, טבלת דירוג לכל תרגיל, תגובות וטיימר אימון. הממשק בעברית ובאנגלית, מותאם לטלפון.
 
 **ארכיטקטורה:** קונטיינר אחד (FastAPI שמגיש גם את ה-API וגם את הדפים) שמדבר עם מסד PostgreSQL אחד. האתר רץ ב-Google Cloud Run, המסד ב-Neon, וכל `push` ל-`main` בונה ומעלה גרסה חדשה לבד. ההרשמה בקוד הזמנה, והסיסמאות נשמרות מוצפנות (Argon2).
+
+**בדיקות אוטומטיות:** בכל העלאה ל-`main` ובכל לילה, GitHub בודק את הקוד עם `ruff` ומריץ את כל הבדיקות.
 
 **הרצה מקומית:** `docker compose up --build`, ואז http://localhost:8000. **גיבוי:** `./scripts/backup-neon.sh`. מדריך העלאה מפורט ב-[DEPLOY.md](DEPLOY.md).
 
