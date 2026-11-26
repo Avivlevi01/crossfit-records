@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, add-ci]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: crossfit
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci -d crossfit"
+          --health-interval 3s --health-retries 20
+
+    # Made-up values for a database that is deleted when the run ends. Never put real secrets here.
+    env:
+      DATABASE_URL: postgresql+psycopg://ci:ci-only-password@localhost:5432/crossfit
+      SECRET_KEY: ci-only-secret-key-not-used-anywhere-else
+      INVITE_CODE: ci-invite-code
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: pytest -v
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - run: node --test "tests/js/*.test.mjs"
